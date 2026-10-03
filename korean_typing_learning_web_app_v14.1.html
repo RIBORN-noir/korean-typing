@@ -1,0 +1,2337 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>韓国語タイピング - 日本人向けハングルタイピング学習</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Noto Sans JP & Noto Sans KR -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            jp: ['Noto Sans JP', 'sans-serif'],
+            kr: ['Noto Sans KR', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+            },
+            mint: {
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Noto Sans JP', 'Noto Sans KR', sans-serif;
+    }
+    .korean-text {
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    /* Blinking cursor animation */
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .animate-cursor {
+      animation: blink 1s infinite;
+    }
+    /* Smooth transition for active keys */
+    .key-cap {
+      transition: all 0.08s ease-in-out;
+    }
+    .key-cap.is-current-key,
+    .dark .key-cap.is-current-key {
+      background-color: #7c3aed !important;
+    }
+    .key-cap.is-current-key,
+    .key-cap.is-current-key *,
+    .dark .key-cap.is-current-key,
+    .dark .key-cap.is-current-key * {
+      color: #ffffff !important;
+    }
+    /* 打つべきキー以外を押したとき：グレー塗りつぶし (Gray 400) */
+    .key-cap.is-wrong-key,
+    .dark .key-cap.is-wrong-key {
+      background-color: #9CA3AF !important;
+    }
+    .key-cap.is-wrong-key,
+    .key-cap.is-wrong-key *,
+    .dark .key-cap.is-wrong-key,
+    .dark .key-cap.is-wrong-key * {
+      color: #ffffff !important;
+    }
+    /* ミス時の入力文字シェイク */
+    @keyframes typo-shake {
+      0%, 100% { transform: translateX(0); }
+      15% { transform: translateX(-8px); }
+      30% { transform: translateX(7px); }
+      45% { transform: translateX(-6px); }
+      60% { transform: translateX(5px); }
+      75% { transform: translateX(-3px); }
+      90% { transform: translateX(2px); }
+    }
+    .typo-shake { animation: typo-shake 0.35s ease-in-out; }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(139, 92, 246, 0.3);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(139, 92, 246, 0.6);
+    }
+
+    main:has(#view-sets:not(.hidden)) {
+  justify-content: flex-start;
+}
+  </style>
+
+<style id="v14-layout">
+/* ===== v14: 理想画像（1920x1080）に合わせたタイピング画面 ===== */
+#view-typing,
+#view-guide {
+  /* キー1段ぶんの高さ（行ピッチ）。画面の高さに応じて 36px〜71.5px。狭い幅では横幅に合わせて縮む */
+  --kh: min(clamp(36px, calc(8.8vh - 23.5px), 71.5px), calc((100vw - 96px) / 14.7));
+}
+#view-guide { max-width: 72rem; }
+@media (min-width: 1024px) and (min-height: 600px) {
+  main:has(#view-typing:not(.hidden)) { padding-top: 12px; padding-bottom: 24px; justify-content: flex-start; }
+  #view-typing:not(.hidden) {
+    display: flex; flex-direction: column; gap: 18px;
+    height: calc(100dvh - 65px - 36px); min-height: 0;
+  }
+  #view-typing > * { margin: 0 !important; }
+  #view-typing > :nth-child(1) { flex: 0 0 auto; padding-top: 10px; padding-bottom: 10px; }
+
+  /* 問題カード：残りの高さをすべて使う */
+  #view-typing > :nth-child(2) {
+    flex: 1 1 0; min-height: 0; overflow: hidden;
+    display: flex; flex-direction: column; gap: 6px; padding: 12px 20px 12px;
+  }
+  #view-typing > :nth-child(2) > * { margin: 0 !important; }
+  #view-typing > :nth-child(2) > .relative:not(#typing-footer-row) { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  #view-typing #standard-line-display:not(.hidden) {
+    flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    gap: clamp(6px, 1.7vh, 20px); padding: 0;
+  }
+  #view-typing #standard-line-display > * { margin: 0 !important; }
+  #view-typing #korean-target-container,
+  #view-typing #typed-converted-text { font-size: clamp(1.75rem, 6.6vh, 4.5rem); line-height: 1.15; min-height: 0; }
+  #view-typing #japanese-translation-text { font-size: clamp(1rem, 2.6vh, 1.75rem); line-height: 1.3; }
+  #view-typing #standard-line-display hr { width: 26rem; max-width: 80%; }
+  #view-typing #long-text-window:not(.hidden) { flex: 1 1 auto; height: auto; min-height: 120px; max-height: none; }
+}
+
+/* 問題カード下段：左=次に入力するキー / 右=入力完了ヒント */
+#view-typing #typing-footer-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex: 0 0 auto; min-height: 22px; }
+#view-typing #advance-hint { padding: 0; }
+#view-typing:has(#keyboard-guide-card.hidden) #next-key-hint { display: none; }  /* ガイドOFF時は答えのヒントも隠す */
+
+/* キーボードカード：白カード＋下端に指（下端でクリップ） */
+#keyboard-guide-card:not(.hidden) {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center;
+  padding: 11px 16px 0; gap: clamp(6px, 1.1vh, 12px); overflow: hidden;
+}
+#keyboard-guide-card > * { margin: 0 !important; }
+.typing-virtual-keyboard { width: min(100%, calc(var(--kh) * 14.7)); display: flex; flex-direction: column; gap: 0; }
+.typing-virtual-keyboard .vk-row { display: flex; width: 100%; }
+.typing-virtual-keyboard .vk-key {
+  --kg: clamp(1.5px, calc(var(--kh) * .042), 3px);
+  flex: 0 0 calc(var(--u) * 100% / 15 - 2 * var(--kg));
+  height: calc(var(--kh) - 2 * var(--kg)); margin: var(--kg); box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-evenly;
+  position: relative; line-height: 1; color: #6b7280; background: #fff;
+  border: 1px solid #e2e8f0; border-radius: clamp(5px, calc(var(--kh) * .12), 9px);
+  box-shadow: 0 1px 2px rgba(15,23,42,.12), 0 2px 5px rgba(15,23,42,.06);
+}
+.typing-virtual-keyboard .vk-key.vk-single { justify-content: center; }
+.typing-virtual-keyboard .vk-sym  { font-size: clamp(9px, calc(var(--kh) * .2), 14px); }
+.typing-virtual-keyboard .vk-jamo { font-size: clamp(8px, calc(var(--kh) * .16), 11.5px); }
+.typing-virtual-keyboard .vk-label {
+  position: absolute; bottom: clamp(3px, calc(var(--kh) * .1), 8px);
+  font-size: clamp(7.5px, calc(var(--kh) * .16), 11.5px); font-family: 'Noto Sans JP', sans-serif;
+}
+.typing-virtual-keyboard .vk-label.l { left: clamp(4px, calc(var(--kh) * .11), 8px); }
+.typing-virtual-keyboard .vk-label.r { right: clamp(4px, calc(var(--kh) * .11), 8px); }
+.dark .typing-virtual-keyboard .vk-key { background: #334155; border-color: #475569; color: #cbd5e1; }
+
+.guide-keyboard-viewport { width: 100%; overflow-x: auto; }
+.guide-keyboard-viewport .typing-virtual-keyboard { width: calc(var(--kh) * 14.7); max-width: none; margin-inline: auto; }
+.guide-keyboard-viewport .finger-guide { width: calc(var(--kh) * 14.7); padding: 0; line-height: 0; margin-inline: auto; }
+#guide-keyboard-guide { padding-left: 10px; padding-right: 10px; }
+
+/* 指：下端クリップの灰色バー */
+#keyboard-guide-card .finger-guide { width: min(100%, calc(var(--kh) * 14.7)); border: 0; padding: 0; line-height: 0; }
+.finger-strip svg { display: block; width: 100%; height: auto; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-full flex flex-col antialiased selection:bg-purple-200 dark:selection:bg-purple-900 selection:text-purple-900">
+
+  <div id="app" class="flex-1 flex flex-col min-h-screen">
+    <!-- Main Header -->
+    <header class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-700/80 sticky top-0 z-30">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        
+        <!-- Logo -->
+        <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('sets')">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20 font-bold text-xl tracking-wider">
+            한
+          </div>
+          <div>
+            <h1 class="font-bold text-lg leading-tight tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+              韓国語タイピング
+              <span class="text-xs bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-medium px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-700">2벌식 対応</span>
+            </h1>
+            <p class="text-xs text-slate-500 dark:text-slate-400">PC設定不要! 誰でもハングル タイピング</p>
+          </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <nav class="flex items-center gap-1.5 sm:gap-2">
+          <button onclick="switchTab('sets')" id="nav-btn-sets" class="px-3 py-2 text-sm font-medium rounded-xl transition flex items-center gap-1.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60">
+            <i class="fa-solid fa-list-ul"></i>
+            <span class="hidden sm:inline">問題集を選ぶ</span>
+          </button>
+
+          <button onclick="openCreateModal()" class="px-3 py-2 text-sm font-medium rounded-xl transition flex items-center gap-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <i class="fa-solid fa-plus"></i>
+            <span class="hidden sm:inline">新しく作成</span>
+          </button>
+
+          <button onclick="switchTab('guide')" id="nav-btn-guide" class="px-3 py-2 text-sm font-medium rounded-xl transition flex items-center gap-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <i class="fa-solid fa-keyboard"></i>
+            <span class="hidden sm:inline">使い方・キー配列</span>
+          </button>
+
+          <!-- Audio Mute Toggle -->
+          <div class="relative" id="audio-wrap">
+          <button onclick="toggleAudioPanel(event)" id="audio-toggle-btn" title="音量・効果音の設定" class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <i class="fa-solid fa-volume-high text-base" id="audio-icon"></i>
+          </button>
+          <div id="audio-panel" class="hidden absolute right-0 top-full mt-2 w-64 z-50 p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl text-sm text-slate-700 dark:text-slate-200">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold">音量</span>
+              <span id="audio-volume-label" class="font-mono text-xs text-slate-500 dark:text-slate-400">75%</span>
+            </div>
+            <input type="range" id="audio-volume" min="0" max="4" step="0.05" value="3" oninput="setAudioVolume(this.value)" class="w-full accent-purple-600 cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-400 mt-0.5"><span>0%</span><span>50%</span><span>100%</span></div>
+            <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 space-y-2">
+              <label class="flex items-center justify-between cursor-pointer"><span>タイプ音</span><input type="checkbox" id="audio-chk-key" checked onchange="setAudioToggle('key', this.checked)" class="w-4 h-4 accent-purple-600"></label>
+              <label class="flex items-center justify-between cursor-pointer"><span>正解音</span><input type="checkbox" id="audio-chk-success" checked onchange="setAudioToggle('success', this.checked)" class="w-4 h-4 accent-purple-600"></label>
+              <label class="flex items-center justify-between cursor-pointer"><span>ミス音</span><input type="checkbox" id="audio-chk-error" checked onchange="setAudioToggle('error', this.checked)" class="w-4 h-4 accent-purple-600"></label>
+            </div>
+          </div>
+          </div>
+
+          <!-- キーボードガイド 表示/非表示（タイピング画面のときだけ表示） -->
+          <button type="button" id="header-guide-toggle" onclick="toggleKeyboardGuide()" style="display:none" class="px-3 py-2 text-sm font-medium rounded-xl transition items-center gap-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <i class="fa-solid fa-keyboard"></i>
+            <span id="keyboard-toggle-label" class="hidden sm:inline">キーボードガイド 表示</span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Content Body -->
+    <main class="flex-1 max-w-screen-2xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
+
+      <!-- VIEW 1: Problem Set Selector -->
+      <section id="view-sets" class="space-y-6">
+        <!-- Hero Banner -->
+        <div class="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-purple-500/10">
+          <div class="relative z-10 max-w-2xl space-y-3">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 backdrop-blur-md text-white border border-white/30">
+              <i class="fa-solid fa-sparkles text-amber-300"></i> 日本人のためのハングル入力練習
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-bold tracking-tight leading-snug">
+              韓国語キーボードの設定は不要！<br>
+              楽しくハングル タイピング学習
+            </h2>
+            <p class="text-sm sm:text-base text-purple-100 leading-relaxed">
+              歌詞フレーズや日常会話、必須単語をタイピング。単語の下に日本語訳が表示されるので、タイピングしながら自然に韓国語の意味も身につきます。
+            </p>
+          </div>
+          <!-- Decorative Background Elements -->
+          <div class="absolute -right-8 -bottom-12 opacity-20 text-white font-bold text-9xl select-none korean-text">
+            한글
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0" id="category-filters">
+            <button onclick="setCategoryFilter('all')" class="cat-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap bg-purple-600 text-white shadow-sm" data-cat="all">すべて</button>
+            <button onclick="setCategoryFilter('歌詞')" class="cat-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700" data-cat="歌詞">🎵 歌詞</button>
+            <button onclick="setCategoryFilter('長文')" class="cat-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700" data-cat="長文">📖 長文</button>
+            <button onclick="setCategoryFilter('短文')" class="cat-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700" data-cat="短文">💬 短文</button>
+            <button onclick="setCategoryFilter('単語')" class="cat-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700" data-cat="単語">📚 単語</button>
+            <button onclick="setCategoryFilter('文字')" class="cat-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700" data-cat="文字">🔤 文字</button>
+            <button onclick="setCategoryFilter('ユーザー')" class="cat-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700" data-cat="ユーザー">👤 ユーザー投稿</button>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <input type="file" id="import-file-input" accept="application/json" class="hidden" onchange="importCustomSetsFromFile(event)" />
+            <button onclick="document.getElementById('import-file-input').click()" title="JSONファイルから読み込み" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 text-xs sm:text-sm font-semibold rounded-xl transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-file-import"></i> 読込
+            </button>
+            <button onclick="exportCustomSetsToFile()" title="自作した問題集をJSONで書き出し" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 text-xs sm:text-sm font-semibold rounded-xl transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-file-export"></i> 書出
+            </button>
+            <button onclick="openCreateModal()" class="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-md shadow-purple-500/20 transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-plus"></i> 問題集を自作・投稿
+            </button>
+          </div>
+        </div>
+
+        <!-- Problem Set Cards Grid -->
+        <div id="sets-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- VIEW 2: Typing Arena -->
+      <section id="view-typing" class="hidden space-y-5 max-w-screen-2xl mx-auto w-full relative">
+        <!-- Top Control Bar -->
+        <div class="flex items-center justify-between gap-2 bg-white dark:bg-slate-800 p-3 px-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+          <button onclick="switchTab('sets')" class="text-xs sm:text-sm text-slate-500 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 font-medium flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-arrow-left"></i> 問題集一覧へ
+          </button>
+          <div class="text-center flex-1 mx-2">
+            <h2 id="typing-set-title" class="font-bold text-sm sm:text-base text-slate-800 dark:text-slate-100 truncate">
+              問題集タイトル
+            </h2>
+          </div>
+          <button onclick="resetTypingSession()" class="text-xs sm:text-sm text-slate-500 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 font-medium flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-rotate-right"></i> 最初から
+          </button>
+        </div>
+
+        <!-- Main Display Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-700/80 shadow-lg shadow-slate-200/50 dark:shadow-none space-y-6 relative overflow-hidden">
+
+          <!-- タイピング開始待機画面：問題部分だけを覆う -->
+          <div id="typing-start-screen" class="hidden absolute inset-0 z-20 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-7 sm:p-9 max-w-sm w-full border border-slate-200 dark:border-slate-700 shadow-2xl text-center space-y-4">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 text-white flex items-center justify-center mx-auto text-2xl shadow-lg shadow-purple-500/20">
+                <i class="fa-solid fa-play"></i>
+              </div>
+              <div>
+                <h2 id="typing-start-title" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">スタート</h2>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">スタートボタン、または Space / Enter で開始</p>
+              </div>
+              <button type="button" onclick="startTypingFromStartScreen()" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow-lg shadow-purple-500/20 transition">
+                スタート
+              </button>
+              <p class="text-xs text-slate-400 dark:text-slate-500">Space / Enterでも開始できます。Esc：戻る</p>
+            </div>
+          </div>
+          
+          <!-- 進捗・正解率・速度・ミス数：1行に統合 -->
+          <div class="space-y-1.5" id="metrics-line">
+            <div class="flex items-center justify-between gap-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <span id="line-progress-text">1 / 15 行目</span>
+              <span class="flex items-center gap-x-4 gap-y-0.5 flex-wrap justify-end">
+                <span>正解率 <b id="stat-accuracy" class="text-emerald-600 dark:text-emerald-400">100%</b></span>
+                <span>速度 <b id="stat-cpm" class="text-purple-600 dark:text-purple-400">0</b> CPM</span>
+                <span>ミス数 <b id="stat-errors" class="text-rose-500">0</b></span>
+              </span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+              <div id="line-progress-bar" class="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full transition-all duration-300 w-0"></div>
+            </div>
+            <!-- JSが書き込む旧要素（非表示・IDのみ維持） -->
+            <span id="speed-indicator" hidden></span><span id="stat-progress" hidden></span>
+          </div>
+
+          <!-- 3段構成（2つ目のデザイン）：上段=お手本 / 中段=日本語訳 / 下段=リアルタイム入力 -->
+          <div class="relative">
+            <!-- 透明な実入力欄（3段エリア全体を覆い、クリック／タップでフォーカス） -->
+            <input
+              type="password"
+              id="typing-input"
+              inputmode="latin"
+              class="opacity-0 absolute inset-0 w-full h-full cursor-default z-10 pointer-events-none"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+            />
+
+            <div id="standard-line-display" class="text-center select-none space-y-6 md:space-y-8 py-2">
+              <!-- 1. 上段：お手本（固定色） -->
+              <div id="korean-target-container" class="korean-text text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-800 dark:text-slate-100 tracking-wider leading-relaxed min-h-[3.5rem] flex items-center justify-center flex-wrap gap-x-1"></div>
+
+              <!-- 2. 中段：日本語訳（ラベルなし） -->
+              <p id="japanese-translation-text" class="text-base sm:text-xl font-medium text-slate-500 dark:text-slate-300 tracking-wide"></p>
+
+              <hr class="border-slate-100 dark:border-slate-700 max-w-xs mx-auto">
+
+              <!-- 3. 下段：リアルタイム入力（枠なし・中央寄せ・お手本と同サイズ） -->
+              <div id="typed-converted-text" class="korean-text text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-wider leading-relaxed min-h-[3.5rem] flex items-center justify-center flex-wrap gap-x-1"></div>
+            </div>
+
+            <div id="long-text-window" class="hidden h-[36vh] min-h-[250px] max-h-[320px] overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/40 p-3 sm:p-4">
+              <div id="long-text-lines" class="space-y-2"></div>
+            </div>
+          </div>
+
+          <!-- 下段：左=次に入力するキー / 右=入力完了ヒント -->
+          <div id="typing-footer-row">
+            <span id="next-key-hint" class="text-xs font-medium text-purple-600 dark:text-purple-400">
+              次に入力するキー: <span class="font-bold underline uppercase" id="next-key-char">-</span>
+              <span id="next-finger-label" class="ml-1 font-bold"></span>
+            </span>
+            <div class="relative grid" style="grid-template-areas:'stack';">
+              <div id="advance-hint" class="opacity-0 invisible [grid-area:stack] self-center text-center text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1.5 py-3 transition-opacity duration-150 animate-pulse">
+              <i class="fa-solid fa-circle-check"></i> 入力完了！ Space か Enter で次へ進む
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive On-Screen Virtual Keyboard Guide（キーはJSで生成） -->
+        <div id="keyboard-guide-card" class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 shadow-md">
+          <div id="virtual-keyboard" class="typing-virtual-keyboard select-none"></div>
+          <div class="finger-guide"></div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: Usage & Keyboard Map Guide -->
+      <section id="view-guide" class="hidden max-w-4xl mx-auto w-full space-y-6">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-700/80 shadow-md space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-keyboard text-purple-600"></i>
+              使い方・キーガイド
+            </h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              ハングルの組み立て方を知ってから、実際のタイピングに進みましょう。
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white">① ハングルは「パーツ」を組み立てて1文字にする</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              ハングルは、子音（자음）と母音（모음）などのパーツを組み合わせて、1つの文字の形にします。<br>
+              日本語の「k」｢a｣を <strong>「か」という1文字として入力する</strong>のと同じように、韓国語では組み合わせた結果が1つの音節になります。
+            </p>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                <p class="text-xs font-bold text-slate-400 mb-2">基本</p>
+                <p class="korean-text text-2xl font-bold">ㄱ ＋ ㅏ ＝ 가</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">子音 ＋ 母音 → 1つのハングル</p>
+              </div>
+              <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                <p class="text-xs font-bold text-slate-400 mb-2">もう一つの例</p>
+                <p class="korean-text text-2xl font-bold">ㄴ ＋ ㅏ ＝ 나</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">パーツを組み合わせて音節を作ります</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white">② 子音＋母音だけではない</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              下に子音が付くこともあります。これを<strong>パッチム（받침）</strong>といいます。
+            </p>
+            <div class="bg-purple-50 dark:bg-purple-950/30 rounded-2xl p-4 border border-purple-200/70 dark:border-purple-800/60">
+              <p class="korean-text text-2xl font-bold text-purple-800 dark:text-purple-200">ㅇ ＋ ㅏ ＋ ㄴ ＝ 안</p>
+              <p class="text-xs text-purple-700 dark:text-purple-300 mt-2">最後の「ㄴ」がパッチムです。</p>
+            </div>
+            <p class="text-sm text-slate-600 dark:text-slate-300">
+              例えば <strong class="korean-text">안녕</strong> は、<span class="korean-text font-bold">ㅇ＋ㅏ＋ㄴ</span> と <span class="korean-text font-bold">ㄴ＋ㅕ＋ㅇ</span> の2つの音節を続けて作ります。
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white">③ 濃音（強く発音する子音）</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              子音には、同じ形を重ねた濃音もあります。<span class="korean-text font-bold">ㄲ・ㄸ・ㅃ・ㅆ・ㅉ</span> が濃音です。<br>
+              <strong>Shift-Key</strong>を押しながら入力することで、濃音を打つことができます。
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span class="korean-text px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">ㄲ</span>
+              <span class="korean-text px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">ㄸ</span>
+              <span class="korean-text px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">ㅃ</span>
+              <span class="korean-text px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">ㅆ</span>
+              <span class="korean-text px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">ㅉ</span>
+            </div>
+          </div>
+
+          <div class="bg-indigo-50 dark:bg-indigo-950/30 rounded-2xl p-5 border border-indigo-200/70 dark:border-indigo-800/60 space-y-2">
+            <h3 class="font-bold text-base text-indigo-800 dark:text-indigo-200">④ このサイトでのタイピング</h3>
+            <p class="text-sm text-indigo-700 dark:text-indigo-300 leading-relaxed">
+              韓国語キーボードの設定をしなくても、画面のキーボードガイドを見ながらハングルを入力できます。
+            </p>
+            <p class="text-sm text-indigo-700 dark:text-indigo-300 leading-relaxed">
+              問題中は、下の<strong>キーボードガイド</strong>が次に押すキーを示します。まずはハングルの組み立て方を理解し、実際に打つときは画面のガイドを見ながら練習できます。
+            </p>
+          </div>
+
+          <div id="guide-keyboard-guide" class="bg-white dark:bg-slate-800 rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-md space-y-3">
+            <div class="flex items-center justify-between px-1">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-keyboard"></i> キーガイドの例：「ㄱ」を入力する位置
+              </span>
+            </div>
+          <div class="rounded-xl bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-center grid sm:grid-cols-2 gap-3">
+            <div>
+              <p class="text-xs font-bold text-slate-500 dark:text-slate-400">例題</p>
+              <p id="guide-example-jamo" class="korean-text mt-1 text-2xl font-bold text-slate-800 dark:text-white">ㄱ</p>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-500 dark:text-slate-400">次に使う指</p>
+              <p class="mt-1 text-lg font-bold text-slate-800 dark:text-white"><span id="guide-next-finger">左人差し指</span></p>
+            </div>
+          </div>
+          <div class="guide-keyboard-viewport">
+            <div id="guide-virtual-keyboard" class="typing-virtual-keyboard select-none"></div>
+            <div id="guide-finger-guide" class="finger-guide"></div>
+          </div>
+
+          </div>
+
+          <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 space-y-2">
+            <h3 class="font-bold text-base text-slate-800 dark:text-slate-200">タイピングを始めるとき</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300">
+              問題集を選んだら、<strong>「スタート」</strong>を押すか、<strong>Space / Enter</strong>を押して開始します。
+              タイピング中に<strong>Esc</strong>を押すとスタート画面に戻り、最初からやり直せます。
+            </p>
+          </div>
+
+          <div class="flex justify-center pt-2">
+            <button onclick="goToCharacterCategory()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow-lg shadow-purple-500/20 transition">
+              文字の問題集を見る
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL 1: Completion Summary Screen -->
+  <div id="modal-summary" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-2xl space-y-6 text-center animate-in fade-in zoom-in duration-200">
+      
+      <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-400 to-amber-200 text-amber-900 flex items-center justify-center mx-auto text-3xl shadow-lg shadow-amber-500/20">
+        🎉
+      </div>
+
+      <div class="space-y-1">
+        <h3 class="text-2xl font-bold text-slate-900 dark:text-white">お疲れ様でした！</h3>
+        <p id="summary-set-title" class="text-sm text-slate-500 dark:text-slate-400">問題集クリア</p>
+      </div>
+
+      <!-- Stats Summary Grid -->
+      <div class="grid grid-cols-2 gap-3 text-left">
+        <div class="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-700">
+          <p class="text-xs text-slate-400 font-medium">クリア時間</p>
+          <p id="summary-time" class="text-xl font-bold text-slate-800 dark:text-slate-100">00:00</p>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-700">
+          <p class="text-xs text-slate-400 font-medium">正解率</p>
+          <p id="summary-accuracy" class="text-xl font-bold text-emerald-600 dark:text-emerald-400">100%</p>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-700">
+          <p class="text-xs text-slate-400 font-medium">平均速度 (CPM)</p>
+          <p id="summary-cpm" class="text-xl font-bold text-purple-600 dark:text-purple-400">0</p>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-700">
+          <p class="text-xs text-slate-400 font-medium">総ミス数</p>
+          <p id="summary-errors" class="text-xl font-bold text-rose-500">0</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2 pt-2">
+        <button onclick="startTypingSession(currentSet)" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow-lg shadow-purple-500/20 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-rotate-right"></i> もう一度挑戦する
+        </button>
+        <button onclick="closeSummaryModal(); switchTab('sets');" class="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold rounded-2xl transition">
+          問題集一覧へ戻る
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Create / Edit Problem Set Modal -->
+  <div id="modal-create" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 dark:border-slate-700 shadow-2xl space-y-5 max-h-[90vh] flex flex-col">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+        <h3 id="modal-create-title" class="text-xl font-bold text-slate-900 dark:text-white">問題集の新規作成・編集</h3>
+        <button onclick="closeCreateModal()" class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="create-set-form" onsubmit="handleSaveSet(event)" class="space-y-4 overflow-y-auto pr-1 flex-1">
+        <input type="hidden" id="form-set-id" value="">
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2 space-y-1">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">タイトル *</label>
+            <input type="text" id="form-title" required placeholder="例: K-POPお気に入りフレーズ" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-purple-500">
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">カテゴリ *</label>
+            <select id="form-category" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-purple-500">
+              <option value="歌詞">🎵 歌詞</option>
+              <option value="長文">📖 長文</option>
+              <option value="短文">💬 短文</option>
+              <option value="単語">📚 単語</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-600 dark:text-slate-300">説明（任意）</label>
+          <input type="text" id="form-description" placeholder="例: 初心者向けの簡単なフレーズ集です" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-purple-500">
+        </div>
+
+        <section class="space-y-2 rounded-xl border border-slate-200 dark:border-slate-700 p-3" aria-labelledby="bulk-lines-title">
+          <h4 id="bulk-lines-title" class="text-sm font-bold text-slate-700 dark:text-slate-200">まとめて追加</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label for="bulk-korean" class="text-xs font-semibold text-slate-600 dark:text-slate-300">韓国語</label>
+              <textarea id="bulk-korean" rows="5" placeholder="1行に1フレーズずつ入力" class="w-full resize-y px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm korean-text focus:outline-none focus:border-purple-500"></textarea>
+            </div>
+            <div class="space-y-1">
+              <label for="bulk-japanese" class="text-xs font-semibold text-slate-600 dark:text-slate-300">日本語</label>
+              <textarea id="bulk-japanese" rows="5" placeholder="韓国語と同じ順番で入力" class="w-full resize-y px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:border-purple-500"></textarea>
+            </div>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <p id="bulk-lines-status" class="text-xs text-slate-500 dark:text-slate-400" role="status" aria-live="polite"></p>
+            <button type="button" onclick="addBulkFormLines()" class="shrink-0 px-3 py-2 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white transition">
+              <i class="fa-solid fa-plus mr-1"></i>一括追加
+            </button>
+          </div>
+        </section>
+
+        <!-- Lines Editor Table -->
+        <div class="space-y-2 pt-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">問題フレーズリスト（大体10〜20行） *</label>
+            <button type="button" onclick="addFormLineRow()" class="text-xs text-purple-600 dark:text-purple-400 font-bold hover:underline flex items-center gap-1">
+              <i class="fa-solid fa-plus"></i> 行を追加
+            </button>
+          </div>
+
+          <div id="form-lines-container" class="space-y-2">
+            <!-- Dynamic rows populated here -->
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-4 border-t border-slate-100 dark:border-slate-700 flex gap-2 justify-end">
+          <button type="button" onclick="closeCreateModal()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300">
+            キャンセル
+          </button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-500/20">
+            保存する
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- このHTML単体で動かすため、保存先はブラウザのlocalStorage（この端末・このブラウザに保存）にしています。
+       他の端末と共有したり、バックアップを取りたい場合は「書出」でJSONファイルに保存し、「読込」で読み込んでください。 -->
+
+  <script>
+    // Synthesized Sound Effects Engine (Web Audio API)
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.master = null;
+        this.volume = 3;      // 0〜4（最大4倍）
+        this.enabled = { key: true, success: true, error: true };
+        try {
+          const saved = JSON.parse(localStorage.getItem('typing-sound-settings') || 'null');
+          if (saved) {
+            if (typeof saved.volume === 'number') this.volume = Math.min(4, Math.max(0, saved.volume));
+            if (saved.enabled) this.enabled = { ...this.enabled, ...saved.enabled };
+          }
+        } catch (e) {}
+      }
+      save() {
+        try { localStorage.setItem('typing-sound-settings', JSON.stringify({ volume: this.volume, enabled: this.enabled })); } catch (e) {}
+      }
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          this.master = this.ctx.createGain();
+          this.master.gain.value = this.volume;
+          this.master.connect(this.ctx.destination);
+        }
+      }
+      setVolume(v) {
+        this.volume = Math.min(4, Math.max(0, Number(v) || 0));
+        if (this.master) this.master.gain.value = this.volume;
+        this.save();
+      }
+      prepare(kind) {
+        if (this.volume <= 0 || !this.enabled[kind]) return false;
+        this.init();
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        return true;
+      }
+      playKey() {
+        if (!this.prepare('key')) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(250, this.ctx.currentTime + 0.03);
+        gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.03);
+        osc.connect(gain);
+        gain.connect(this.master);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.03);
+      }
+      playSuccess() {
+        if (!this.prepare('success')) return;
+        const now = this.ctx.currentTime;
+        [523, 659, 784].forEach((freq, i) => {
+          const t = now + i * 0.09;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, t);
+          gain.gain.setValueAtTime(0.1, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+          osc.connect(gain);
+          gain.connect(this.master);
+          osc.start(t);
+          osc.stop(t + 0.15);
+        });
+      }
+      playError() {
+        if (!this.prepare('error')) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(190, now);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.connect(gain);
+        gain.connect(this.master);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      }
+    }
+    const sound = new SoundEngine();
+
+    function updateAudioIcon() {
+      const icon = document.getElementById('audio-icon');
+      if (!icon) return;
+      const allOff = sound.volume <= 0 || !(sound.enabled.key || sound.enabled.success || sound.enabled.error);
+      icon.className = allOff ? 'fa-solid fa-volume-xmark text-slate-400' : 'fa-solid fa-volume-high text-base';
+    }
+    function setAudioVolume(v) {
+      sound.setVolume(v);
+      document.getElementById('audio-volume-label').textContent = Math.round(sound.volume / 4 * 100) + '%';
+      updateAudioIcon();
+    }
+    function setAudioToggle(kind, on) {
+      sound.enabled[kind] = !!on;
+      sound.save();
+      updateAudioIcon();
+      if (on) { if (kind === 'key') sound.playKey(); else if (kind === 'success') sound.playSuccess(); else sound.playError(); }
+    }
+    function toggleAudioPanel(e) {
+      if (e) e.stopPropagation();
+      document.getElementById('audio-panel').classList.toggle('hidden');
+    }
+    document.addEventListener('click', (e) => {
+      const panel = document.getElementById('audio-panel');
+      if (panel && !panel.classList.contains('hidden') && !e.target.closest('#audio-wrap')) panel.classList.add('hidden');
+    });
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('audio-volume').value = sound.volume;
+      document.getElementById('audio-volume-label').textContent = Math.round(sound.volume / 4 * 100) + '%';
+      ['key', 'success', 'error'].forEach(k => { document.getElementById('audio-chk-' + k).checked = !!sound.enabled[k]; });
+      updateAudioIcon();
+    });
+
+    // ミス時：入力文字をシェイク
+    function shakeTypedText() {
+      ['typed-converted-text', 'long-text-typed'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el || el.offsetParent === null) return;
+        el.classList.remove('typo-shake');
+        void el.offsetWidth;
+        el.classList.add('typo-shake');
+      });
+    }
+
+    // Hangul 2-Set (Dubeolsik) QWERTY to Syllable Composition Engine
+    const CHO_MAP = { 'r':0, 'R':1, 's':2, 'e':3, 'E':4, 'f':5, 'a':6, 'q':7, 'Q':8, 't':9, 'T':10, 'd':11, 'w':12, 'W':13, 'c':14, 'z':15, 'x':16, 'v':17, 'g':18 };
+    const JUNG_MAP = { 'k':0, 'o':1, 'i':2, 'O':3, 'j':4, 'p':5, 'u':6, 'P':7, 'h':8, 'y':12, 'n':13, 'b':17, 'm':18, 'l':20 };
+    const JONG_MAP = { 'r':1, 'R':2, 's':4, 'e':7, 'f':8, 'a':16, 'q':17, 't':19, 'T':20, 'd':21, 'w':22, 'c':23, 'z':24, 'x':25, 'v':26, 'g':27 };
+
+    const DUAL_JUNG = { '8,0':9, '8,1':10, '8,20':11, '13,4':14, '13,5':15, '13,20':16, '18,20':19 };
+    const DUAL_JONG = { '1,19':3, '4,22':5, '4,27':6, '8,1':9, '8,16':10, '8,17':11, '8,19':12, '8,25':13, '8,26':14, '8,27':15, '17,19':18 };
+
+    const SPLIT_DUAL_JONG = { 3:[1,9], 5:[4,12], 6:[4,18], 9:[8,0], 10:[8,6], 11:[8,7], 12:[8,9], 13:[8,16], 14:[8,17], 15:[8,18], 18:[17,9] };
+    const JONG_TO_CHO = { 1:0, 2:1, 4:2, 7:3, 8:5, 16:6, 17:7, 19:9, 20:10, 21:11, 22:12, 23:14, 24:15, 25:16, 26:17, 27:18 };
+
+    const STANDALONE_CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+    const STANDALONE_JUNG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+
+    const CHO_KEY_BY_INDEX = Object.fromEntries(Object.entries(CHO_MAP).map(([key, index]) => [index, key]));
+    const JUNG_KEY_BY_INDEX = Object.fromEntries(Object.entries(JUNG_MAP).map(([key, index]) => [index, key]));
+    const JONG_KEY_BY_INDEX = Object.fromEntries(Object.entries(JONG_MAP).map(([key, index]) => [index, key]));
+    const JONG_CHAR_BY_INDEX = Object.fromEntries(Object.entries(JONG_MAP).map(([key, index]) => [index, STANDALONE_CHO[CHO_MAP[key]]]));
+    const DUAL_JUNG_PARTS = Object.fromEntries(Object.entries(DUAL_JUNG).map(([parts, index]) => [index, parts.split(',').map(Number)]));
+    const KEY_FINGER_MAP = {
+      '`':'left-pinky','1':'left-pinky','2':'left-ring','3':'left-middle','4':'left-index','5':'left-index',
+      '6':'right-index','7':'right-index','8':'right-middle','9':'right-ring','0':'right-pinky','-':'right-pinky','=':'right-pinky',
+      q:'left-pinky',a:'left-pinky',z:'left-pinky',
+      w:'left-ring',s:'left-ring',x:'left-ring',
+      e:'left-middle',d:'left-middle',c:'left-middle',
+      r:'left-index',f:'left-index',v:'left-index',t:'left-index',g:'left-index',b:'left-index',
+      y:'right-index',h:'right-index',n:'right-index',u:'right-index',j:'right-index',m:'right-index',
+      i:'right-middle',k:'right-middle',',':'right-middle',
+      o:'right-ring',l:'right-ring','.':'right-ring',
+      p:'right-pinky','[':'right-pinky',']':'right-pinky','\\':'right-pinky',';':'right-pinky',"'":'right-pinky','/':'right-pinky',
+      ' ':'right-thumb',enter:'right-pinky'
+    };
+    const FINGER_LABELS = {
+      'left-pinky':'左小指','left-ring':'左薬指','left-middle':'左中指','left-index':'左人差し指','left-thumb':'左親指',
+      'right-thumb':'右親指','right-index':'右人差し指','right-middle':'右中指','right-ring':'右薬指','right-pinky':'右小指'
+    };
+    const SYMBOL_KEY_MAP = {
+      ' ':' ', '\n':'Enter', '`':'`', '~':'`', '!':'1', '@':'2', '#':'3', '$':'4', '%':'5', '^':'6', '&':'7', '*':'8',
+      '(':'9', ')':'0', '-':'-', '_':'-', '=':'=', '+':'=', '[':'[', '{':'[', ']':']', '}':']', '\\':'\\', '|':'\\',
+      ';':';', ':':';', "'":"'", '"':"'", ',':',', '<':',', '.':'.', '>':'.', '/':'/', '?':'/',
+      '！':'1', '？':'/', '，':',', '．':'.', '：':';', '；':';', '（':'9', '）':'0', '「':"'", '」':"'", '、':',', '。':'.'
+    };
+    '0123456789'.split('').forEach(digit => { SYMBOL_KEY_MAP[digit] = digit; });
+    '０１２３４５６７８９'.split('').forEach((digit, index) => { SYMBOL_KEY_MAP[digit] = String(index); });
+
+    function expandMappedIndex(index, partsByIndex) {
+      const parts = partsByIndex[index];
+      return parts ? parts.flatMap(part => expandMappedIndex(part, partsByIndex)) : [index];
+    }
+
+    function keyStep(key, component, forceShift = false) {
+      return { key: key.toLowerCase(), shift: forceShift || key !== key.toLowerCase(), component };
+    }
+
+    function getJamoKeySteps(character) {
+      const choIndex = STANDALONE_CHO.indexOf(character);
+      if (choIndex >= 0) return [keyStep(CHO_KEY_BY_INDEX[choIndex], character)];
+
+      const jungIndex = STANDALONE_JUNG.indexOf(character);
+      if (jungIndex >= 0) {
+        return expandMappedIndex(jungIndex, DUAL_JUNG_PARTS).map(index =>
+          keyStep(JUNG_KEY_BY_INDEX[index], STANDALONE_JUNG[index])
+        );
+      }
+
+      const jongIndex = Number(Object.keys(JONG_CHAR_BY_INDEX).find(index => JONG_CHAR_BY_INDEX[index] === character));
+      if (Number.isFinite(jongIndex) && jongIndex > 0) {
+        return expandMappedIndex(jongIndex, SPLIT_DUAL_JONG).map(index =>
+          keyStep(JONG_KEY_BY_INDEX[index], JONG_CHAR_BY_INDEX[index])
+        );
+      }
+      return [];
+    }
+
+    function getSyllableKeySteps(character) {
+      const syllable = character.charCodeAt(0) - 0xAC00;
+      if (syllable < 0 || syllable > 0x2BA3) return getJamoKeySteps(character);
+
+      const choIndex = Math.floor(syllable / 588);
+      const jungIndex = Math.floor((syllable % 588) / 28);
+      const jongIndex = syllable % 28;
+      const steps = [keyStep(CHO_KEY_BY_INDEX[choIndex], STANDALONE_CHO[choIndex])];
+      steps.push(...expandMappedIndex(jungIndex, DUAL_JUNG_PARTS).map(index =>
+        keyStep(JUNG_KEY_BY_INDEX[index], STANDALONE_JUNG[index])
+      ));
+      if (jongIndex > 0) {
+        steps.push(...expandMappedIndex(jongIndex, SPLIT_DUAL_JONG).map(index =>
+          keyStep(JONG_KEY_BY_INDEX[index], JONG_CHAR_BY_INDEX[index])
+        ));
+      }
+      return steps;
+    }
+
+    function getTargetKeySteps(targetText) {
+      const result = [];
+      Array.from(targetText).forEach((character, targetIndex) => {
+        let characterSteps;
+        if (character >= '\uAC00' && character <= '\uD7A3') {
+          characterSteps = getSyllableKeySteps(character);
+        } else if (LATIN_RE.test(character)) {
+          characterSteps = [keyStep(character, character)];
+        } else {
+          const key = SYMBOL_KEY_MAP[character];
+          if (key) {
+            const shifted = /[~!@#$%^&*()_+{}|:"<>?！？，．：；（）「」]/.test(character);
+            characterSteps = [keyStep(key, character === ' ' ? 'Space' : character, shifted)];
+          } else {
+            characterSteps = getJamoKeySteps(character);
+          }
+        }
+
+        const components = characterSteps.map(step => step.component);
+        characterSteps.forEach(step => result.push({ ...step, targetChar: character, targetIndex, components }));
+      });
+      return result;
+    }
+
+    function fingerForKey(key) {
+      return KEY_FINGER_MAP[key] || KEY_FINGER_MAP[key.toLowerCase()] || null;
+    }
+
+    function shiftFingerForKey(key) {
+      return 'left-pinky';
+    }
+
+    function parseQwertyToHangul(raw) {
+      let result = "";
+      let state = { cho: -1, jung: -1, jong: -1 };
+
+      function flush() {
+        if (state.cho !== -1) {
+          if (state.jung !== -1) {
+            let code = 0xAC00 + (state.cho * 588) + (state.jung * 28) + (state.jong !== -1 ? state.jong : 0);
+            result += String.fromCharCode(code);
+          } else {
+            result += STANDALONE_CHO[state.cho];
+          }
+        } else if (state.jung !== -1) {
+          result += STANDALONE_JUNG[state.jung];
+        }
+        state = { cho: -1, jung: -1, jong: -1 };
+      }
+
+      for (let i = 0; i < raw.length; i++) {
+        let char = raw[i];
+
+        if (!/[a-zA-Z]/.test(char)) {
+          flush();
+          result += char;
+          continue;
+        }
+
+        let isCho = CHO_MAP.hasOwnProperty(char);
+        let isJung = JUNG_MAP.hasOwnProperty(char);
+
+        if (state.cho === -1 && state.jung === -1) {
+          if (isCho) state.cho = CHO_MAP[char];
+          else if (isJung) state.jung = JUNG_MAP[char];
+        } else if (state.cho !== -1 && state.jung === -1) {
+          if (isJung) {
+            state.jung = JUNG_MAP[char];
+          } else if (isCho) {
+            flush();
+            state.cho = CHO_MAP[char];
+          }
+        } else if (state.jung !== -1 && state.cho === -1) {
+          if (isJung) {
+            let dualKey = `${state.jung},${JUNG_MAP[char]}`;
+            if (DUAL_JUNG[dualKey] !== undefined) {
+              state.jung = DUAL_JUNG[dualKey];
+            } else {
+              flush();
+              state.jung = JUNG_MAP[char];
+            }
+          } else {
+            flush();
+            if (isCho) state.cho = CHO_MAP[char];
+          }
+        } else if (state.cho !== -1 && state.jung !== -1 && state.jong === -1) {
+          if (isJung) {
+            let dualKey = `${state.jung},${JUNG_MAP[char]}`;
+            if (DUAL_JUNG[dualKey] !== undefined) {
+              state.jung = DUAL_JUNG[dualKey];
+            } else {
+              flush();
+              state.jung = JUNG_MAP[char];
+            }
+          } else {
+            let jongVal = JONG_MAP[char];
+            if (jongVal !== undefined) {
+              state.jong = jongVal;
+            } else {
+              flush();
+              state.cho = CHO_MAP[char];
+            }
+          }
+        } else if (state.cho !== -1 && state.jung !== -1 && state.jong !== -1) {
+          if (isJung) {
+            let singleJong = SPLIT_DUAL_JONG[state.jong];
+            if (singleJong) {
+              state.jong = singleJong[0];
+              flush();
+              state.cho = singleJong[1];
+              state.jung = JUNG_MAP[char];
+            } else {
+              let prevJong = state.jong;
+              state.jong = -1;
+              flush();
+              state.cho = JONG_TO_CHO[prevJong];
+              state.jung = JUNG_MAP[char];
+            }
+          } else {
+            let jong2 = JONG_MAP[char];
+            let dualKey = `${state.jong},${jong2}`;
+            if (jong2 !== undefined && DUAL_JONG[dualKey] !== undefined) {
+              state.jong = DUAL_JONG[dualKey];
+            } else {
+              flush();
+              if (isCho) state.cho = CHO_MAP[char];
+            }
+          }
+        }
+      }
+
+      flush();
+      return result;
+    }
+
+    // お手本の「次の文字」が英字(A-Z/a-z)のときは、その位置だけ英字としてそのまま入力する
+    // （歌詞の baby / Oh / K-POP などの英語部分用）。大文字小文字はお手本に合わせる。
+    const LATIN_RE = /[A-Za-z]/;
+    function parseWithTarget(raw, target) {
+      let prefix = '';
+      let buf = '';
+      for (const c of raw) {
+        if (LATIN_RE.test(c)) {
+          const parsedBuf = parseQwertyToHangul(buf);
+          const pos = prefix.length + parsedBuf.length;
+          const t = target[pos];
+          let latin = !!t && LATIN_RE.test(t);
+          // 直前に組み立て中の音節がある場合は、それがお手本と一致して完成している時だけ英字モード
+          if (latin && parsedBuf.length > 0 && parsedBuf[parsedBuf.length - 1] !== target[pos - 1]) latin = false;
+          if (latin) {
+            prefix += parsedBuf + (c.toLowerCase() === t.toLowerCase() ? t : c);
+            buf = '';
+            continue;
+          }
+        }
+        buf += c;
+      }
+      return prefix + parseQwertyToHangul(buf);
+    }
+
+    // Default Preset Problem Sets
+    const DEFAULT_PRESETS = [
+      {
+        id: "preset-lyrics",
+        isPreset: true,
+        title: "K-POP歌詞フレーズ 15選",
+        category: "歌詞",
+        description: "人気の韓国ドラマ挿入歌やK-POPソングに登場するよくあるフレーズ",
+        lines: [
+          { korean: "영원히 함께니까", japanese: "永遠に一緒だから" },
+          { korean: "내 손을 잡아", japanese: "私の手を握って" },
+          { korean: "너의 모든 순간이", japanese: "君のすべての瞬間が" },
+          { korean: "빛나는 우리 이야기", japanese: "輝く私たちの物語" },
+          { korean: "다시 만날 때까지", japanese: "また会える日まで" },
+          { korean: "꿈처럼 다가와줘", japanese: "夢のように近づいてきて" },
+          { korean: "너와 함께라면", japanese: "君と一緒なら" },
+          { korean: "마음이 전해지길", japanese: "思いが伝わりますように" },
+          { korean: "사랑을 담아서", japanese: "愛を込めて" },
+          { korean: "오늘도 수고했어", japanese: "今日もお疲れ様" },
+          { korean: "바람이 부는 거리", japanese: "風が吹く街" },
+          { korean: "눈부신 미래로", japanese: "まぶしい未来へ" },
+          { korean: "행복한 기억들", japanese: "幸せな記憶たち" },
+          { korean: "늘 곁에 있을게", japanese: "いつもそばにいるよ" },
+          { korean: "새로운 시작을 위해", japanese: "新しいスタートのために" }
+        ]
+      },
+      {
+        id: "preset-words",
+        isPreset: true,
+        title: "超必須！韓国語単語 20選",
+        category: "単語",
+        description: "韓国語学習の第一歩。頻出度No.1の基本単語セット",
+        lines: [
+          { korean: "안녕하세요", japanese: "こんにちは" },
+          { korean: "감사합니다", japanese: "ありがとうございます" },
+          { korean: "죄송합니다", japanese: "すみません・ごめんなさい" },
+          { korean: "네", japanese: "はい" },
+          { korean: "아니요", japanese: "いいえ" },
+          { korean: "맛있어요", japanese: "美味しいです" },
+          { korean: "진짜", japanese: "本当・マジで" },
+          { korean: "괜찮아요", japanese: "大丈夫です" },
+          { korean: "반가워요", japanese: "お会いできて嬉しいです" },
+          { korean: "좋아요", japanese: "良いです・好きです" },
+          { korean: "친구", japanese: "友達" },
+          { korean: "사랑", japanese: "愛" },
+          { korean: "선생님", japanese: "先生" },
+          { korean: "학교", japanese: "学校" },
+          { korean: "음식", japanese: "食べ物" },
+          { korean: "지금", japanese: "今" },
+          { korean: "오늘", japanese: "今日" },
+          { korean: "내일", japanese: "明日" },
+          { korean: "약속", japanese: "約束" },
+          { korean: "선물", japanese: "プレゼント" }
+        ]
+      },
+      {
+        id: "preset-short-1",
+        isPreset: true,
+        title: "日常で使える韓国語短文 12選",
+        category: "短文",
+        description: "韓国旅行や食事、ショッピングですぐ使える実用短文",
+        lines: [
+          { korean: "이거 얼마예요?", japanese: "これいくらですか？" },
+          { korean: "메뉴판 주세요", japanese: "メニューをください" },
+          { korean: "화장실이 어디예요?", japanese: "トイレはどこですか？" },
+          { korean: "조금 천천히 말해 주세요", japanese: "少しゆっくり話してください" },
+          { korean: "사진 찍어 주실 수 있나요?", japanese: "写真撮っていただけますか？" },
+          { korean: "추천 메뉴가 뭐예요?", japanese: "おすすめメニューは何ですか？" },
+          { korean: "카드 결제 돼요?", japanese: "カード決済できますか？" },
+          { korean: "여기서 먹고 갈게요", japanese: "ここで食べていきます" },
+          { korean: "포장해 주세요", japanese: "テイクアウトでお願いします" },
+          { korean: "길을 잃었어요", japanese: "道に迷いました" },
+          { korean: "도와주세요", japanese: "助けてください" },
+          { korean: "다음에 또 올게요", japanese: "また来ますね" }
+        ]
+      },
+      {
+        id: "preset-long-2",
+        isPreset: true,
+        title: "ショートストーリー｢コーヒーショップ｣",
+        category: "長文",
+        description: "コーヒーショップでの会話や韓国の日常を想定したショートストーリー",
+        lines: [
+          { korean: "아침에 지하철역으로 가는 길을 보면,", japanese: "朝、駅へ向かう道で、" },
+          { korean: "직장인들이 아이스 아메리카노를", japanese: "会社員たちががアイスアメリカーノを" },
+          { korean: "한 손에 들고 걸어간다.", japanese: "片手に持ち歩いていく。" },
+          { korean: "나도 출근하기 전에 근처 카페에 들러", japanese: "私も出勤する前に近所のカフェに立ち寄って" },
+          { korean: "늘 마시던 아메리카노를 테이크아웃했다.", japanese: "いつも飲んでいたアメリカーノをテイクアウトした。" },
+          { korean: "퇴근할 시간이 되자 친구에게 카카오톡이 왔다.", japanese: "仕事が終わる頃､友達からカカオトークが来た。" },
+          { korean: "\"퇴근했어?\"", japanese: "「仕事終わった？」" },
+          { korean: "\"응. 카페 갈래?\"", japanese: "「うん。カフェ行く？」" },
+          { korean: "약속한 카페에서 친구는 아이스 라테를,", japanese: "待ち合わせたカフェで友達はアイスラテを、" },
+          { korean: "나는 또 아메리카노를 주문했다.", japanese: "私はまたアメリカーノを注文した。" },
+          { korean: "\"너 또 아메리카노야?\"", japanese: "「またアメリカーノなの？」" },
+          { korean: "\"응. 역시 이게 제일 맛있어.\"", japanese: "「うん。やっぱりこれが一番おいしいんだよね。」" },
+          { korean: "자리에 앉자마자 회사에서 있었던 일이나", japanese: "席に座ると 仕事の愚痴や" },
+          { korean: "주말에 뭘 할지 이야기를 나누기 시작했다.", japanese: "週末に何をするか話し始めた。" },
+          { korean: "\"주말에 뭐 해?\"", japanese: "「週末､何するの？」" },
+          { korean: "\"아직 아무것도 안 정했어.\"", japanese: "「まだ何も決めていない。」" },
+          { korean: "카페 안을 둘러보니 옆자리에서는 ", japanese: "店内を見渡すと､隣では" },
+          { korean: "학생이 공부를 하고 있고,", japanese: "学生が勉強していて､" },
+          { korean: "창가에서는 노트북을 펼쳐 놓은", japanese: "窓際ではノートパソコンを開いて" },
+          { korean: "직장인이 일을 하고 있었다.", japanese: "会社員が仕事をしているのを見かけた。" },
+          { korean: "특별한 이야기를 하는 것도 아니다.", japanese: "特別な話をするわけでもない。" },
+          { korean: "그저 커피를 마시면서 친구와 이야기를 나눌 뿐이다.", japanese: "ただコーヒーを飲みながら友達と話をすることだけ。" },
+          { korean: "그런데도 이렇게 카페에서 보내는 시간이", japanese: "それでも､こうしてカフェで過ごす時間は" },
+          { korean: "왠지 편안하게 느껴졌다.", japanese: "なんだか心地よかった。" }
+        ]
+      },
+     {
+        id: "preset-long-1",
+        isPreset: true,
+        title: "韓国語長文タイピング",
+        category: "長文",
+        description: "文章単位で韓国語を続けて入力する長文練習",
+        lines: [
+          { korean: "한국어를 처음 배우는 사람도", japanese: "韓国語を初めて学ぶ人も" },
+          { korean: "매일 조금씩 타이핑하면", japanese: "毎日少しずつタイピングすれば、" },
+          { korean: "자연스럽게 자판에", japanese: "自然とキーボードに" },
+          { korean: "익숙해질 수 있어요.", japanese: "慣れることができます。" },
+          { korean: "좋아하는 노래의 가사나", japanese: "好きな歌の歌詞や" },
+          { korean: "드라마 대사를 직접 입력하면서", japanese: "ドラマのセリフを直接入力しながら、" },
+          { korean: "단어와 표현을 함께 익히는 것도", japanese: "単語や表現を一緒に覚えるのも" },
+          { korean: "좋은 공부 방법이에요.", japanese: "良い勉強方法です。" },
+          { korean: "처음에는 한 글자를 입력할 때", japanese: "最初は一文字を入力するときに" },
+          { korean: "시간이 걸릴 수 있습니다.", japanese: "時間がかかるかもしれません。" },
+          { korean: "하지만 정확한 손가락 위치로", japanese: "しかし正確な指の位置で" },
+          { korean: "꾸준히 연습하는 것이 중요합니다.", japanese: "コツコツ練習することが大切です。" },
+          { korean: "타자 속도가 향상될수록", japanese: "タイピング速度が向上するにつれて、" },
+          { korean: "한국어 실력도 함께 길러집니다.", japanese: "韓国語の実力も一緒に養われます。" },
+          { korean: "매일 짧은 시간이라도", japanese: "毎日短い時間でも" },
+          { korean: "포기하지 않고 연습해 보세요.", japanese: "諦めずに練習してみてください。" },
+          { korean: "시간이 지날수록 점점", japanese: "時間が経つにつれて次第に" },
+          { korean: "긴 문장도 입력할 수 있게 됩니다.", japanese: "長い文章も入力できるようになります。" },
+          { korean: "즐겁게 연습하며", japanese: "楽しく練習しながら" },
+          { korean: "한국어 실력을 올려보세요.", japanese: "韓国語の実力を引き上げてみましょう。" }
+        ]
+      },
+      {
+        id: "preset-char-parts",
+        isPreset: true,
+        title: "ハングル パーツ練習",
+        category: "文字",
+        description: "子音・母音・濃音を1つずつ入力して、キーとハングルの対応を覚える練習",
+        lines: [
+          { korean: "ㄱ", japanese: "ㄱ" }, { korean: "ㄲ", japanese: "ㄲ" }, { korean: "ㄴ", japanese: "ㄴ" },
+          { korean: "ㄷ", japanese: "ㄷ" }, { korean: "ㄸ", japanese: "ㄸ" }, { korean: "ㄹ", japanese: "ㄹ" },
+          { korean: "ㅁ", japanese: "ㅁ" }, { korean: "ㅂ", japanese: "ㅂ" }, { korean: "ㅃ", japanese: "ㅃ" },
+          { korean: "ㅅ", japanese: "ㅅ" }, { korean: "ㅆ", japanese: "ㅆ" }, { korean: "ㅇ", japanese: "ㅇ" },
+          { korean: "ㅈ", japanese: "ㅈ" }, { korean: "ㅉ", japanese: "ㅉ" }, { korean: "ㅊ", japanese: "ㅊ" },
+          { korean: "ㅋ", japanese: "ㅋ" }, { korean: "ㅌ", japanese: "ㅌ" }, { korean: "ㅍ", japanese: "ㅍ" },
+          { korean: "ㅎ", japanese: "ㅎ" }, { korean: "ㅏ", japanese: "ㅏ" }, { korean: "ㅐ", japanese: "ㅐ" },
+          { korean: "ㅑ", japanese: "ㅑ" }, { korean: "ㅓ", japanese: "ㅓ" }, { korean: "ㅔ", japanese: "ㅔ" },
+          { korean: "ㅕ", japanese: "ㅕ" }, { korean: "ㅗ", japanese: "ㅗ" }, { korean: "ㅛ", japanese: "ㅛ" },
+          { korean: "ㅜ", japanese: "ㅜ" }, { korean: "ㅠ", japanese: "ㅠ" }, { korean: "ㅡ", japanese: "ㅡ" },
+          { korean: "ㅣ", japanese: "ㅣ" }
+        ]
+      },
+  {
+    id: "preset-char-syllables-basic",
+    isPreset: true,
+    title: "ハングル 基本音節練習 (基本子音×基本母音)",
+    category: "文字",
+    description: "基本子音(14種)と基本母音(10種)を組み合わせた反切表の音節練習",
+    lines: [
+      { korean: "가", japanese: "가" }, { korean: "나", japanese: "나" }, { korean: "다", japanese: "다" },
+      { korean: "라", japanese: "라" }, { korean: "마", japanese: "마" }, { korean: "바", japanese: "바" },
+      { korean: "사", japanese: "사" }, { korean: "아", japanese: "아" }, { korean: "자", japanese: "자" },
+      { korean: "차", japanese: "차" }, { korean: "카", japanese: "카" }, { korean: "타", japanese: "타" },
+      { korean: "파", japanese: "파" }, { korean: "하", japanese: "하" }, { korean: "고", japanese: "고" },
+      { korean: "노", japanese: "노" }, { korean: "도", japanese: "도" }, { korean: "로", japanese: "로" },
+      { korean: "모", japanese: "모" }, { korean: "보", japanese: "보" }, { korean: "소", japanese: "소" },
+      { korean: "오", japanese: "오" }, { korean: "조", japanese: "조" }, { korean: "초", japanese: "초" },
+      { korean: "코", japanese: "코" }, { korean: "토", japanese: "토" }, { korean: "포", japanese: "포" },
+      { korean: "호", japanese: "호" }, { korean: "구", japanese: "구" }, { korean: "누", japanese: "누" }
+    ]
+  },
+  {
+    id: "preset-char-syllables-tense-asp",
+    isPreset: true,
+    title: "ハングル 濃音・激音音節練習",
+    category: "文字",
+    description: "濃音(ㄲ,ㄸ,ㅃ,ㅆ,ㅉ)や激音を中心に含む音節の入力練習",
+    lines: [
+      { korean: "까", japanese: "까" }, { korean: "따", japanese: "따" }, { korean: "빠", japanese: "빠" },
+      { korean: "싸", japanese: "싸" }, { korean: "짜", japanese: "짜" }, { korean: "꺼", japanese: "꺼" },
+      { korean: "떠", japanese: "떠" }, { korean: "뻐", japanese: "뻐" }, { korean: "써", japanese: "써" },
+      { korean: "쩌", japanese: "쩌" }, { korean: "꼬", japanese: "꼬" }, { korean: "또", japanese: "또" },
+      { korean: "뽀", japanese: "뽀" }, { korean: "쏘", japanese: "쏘" }, { korean: "쪼", japanese: "쪼" },
+      { korean: "꾸", japanese: "꾸" }, { korean: "뚜", japanese: "뚜" }, { korean: "뿌", japanese: "뿌" },
+      { korean: "쑤", japanese: "쑤" }, { korean: "쭈", japanese: "쭈" }, { korean: "차", japanese: "차" },
+      { korean: "카", japanese: "카" }, { korean: "타", japanese: "타" }, { korean: "파", japanese: "파" },
+      { korean: "하", japanese: "하" }
+    ]
+  },
+  {
+    id: "preset-char-syllables-compound-vowel",
+    isPreset: true,
+    title: "ハングル 複合母音音節練習",
+    category: "文字",
+    description: "二重母音・複合母音(ㅐ, ㅔ, ㅘ, ㅝ など)を含む音節の入力練習",
+    lines: [
+      { korean: "개", japanese: "개" }, { korean: "내", japanese: "내" }, { korean: "대", japanese: "대" },
+      { korean: "래", japanese: "래" }, { korean: "매", japanese: "매" }, { korean: "배", japanese: "배" },
+      { korean: "새", japanese: "새" }, { korean: "애", japanese: "애" }, { korean: "재", japanese: "재" },
+      { korean: "게", japanese: "게" }, { korean: "네", japanese: "네" }, { korean: "데", japanese: "데" },
+      { korean: "레", japanese: "레" }, { korean: "메", japanese: "메" }, { korean: "베", japanese: "베" },
+      { korean: "세", japanese: "세" }, { korean: "에", japanese: "에" }, { korean: "제", japanese: "제" },
+      { korean: "과", japanese: "과" }, { korean: "좌", japanese: "좌" }, { korean: "귀", japanese: "귀" },
+      { korean: "쉬", japanese: "쉬" }, { korean: "뭐", japanese: "뭐" }, { korean: "왜", japanese: "왜" },
+      { korean: "의", japanese: "의" }
+    ]
+  },
+  {
+    id: "preset-char-syllables-basic-batchim",
+    isPreset: true,
+    title: "ハングル 基本パッチム音節練習",
+    category: "文字",
+    description: "代表的な単パッチム(ㄱ, ㄴ, ㄹ, ㅁ, ㅂ, ㅇ)を含む音節の入力練習",
+    lines: [
+      { korean: "안", japanese: "안" }, { korean: "녕", japanese: "녕" }, { korean: "밥", japanese: "밥" },
+      { korean: "집", japanese: "집" }, { korean: "물", japanese: "물" }, { korean: "한", japanese: "한" },
+      { korean: "글", japanese: "글" }, { korean: "강", japanese: "강" }, { korean: "산", japanese: "산" },
+      { korean: "달", japanese: "달" }, { korean: "봄", japanese: "봄" }, { korean: "곰", japanese: "곰" },
+      { korean: "입", japanese: "입" }, { korean: "방", japanese: "방" }, { korean: "상", japanese: "상" },
+      { korean: "눈", japanese: "눈" }, { korean: "손", japanese: "손" }, { korean: "길", japanese: "길" },
+      { korean: "말", japanese: "말" }, { korean: "몸", japanese: "몸" }, { korean: "힘", japanese: "힘" },
+      { korean: "법", japanese: "법" }, { korean: "공", japanese: "공" }, { korean: "정", japanese: "정" },
+      { korean: "동", japanese: "동" }
+    ]
+  },
+  {
+    id: "preset-char-syllables-complex-batchim",
+    isPreset: true,
+    title: "ハングル 応用・二重パッチム音節練習",
+    category: "文字",
+    description: "詰まる音や二重パッチム(ㄳ, ㄺ, ㄻ, ㄼ など)を含む音節の入力練習",
+    lines: [
+      { korean: "닭", japanese: "닭" }, { korean: "삶", japanese: "삶" }, { korean: "앎", japanese: "앎" },
+      { korean: "흙", japanese: "흙" }, { korean: "값", japanese: "값" }, { korean: "몫", japanese: "몫" },
+      { korean: "앉", japanese: "앉" }, { korean: "많", japanese: "많" }, { korean: "넓", japanese: "넓" },
+      { korean: "읽", japanese: "읽" }, { korean: "없", japanese: "없" }, { korean: "있", japanese: "있" },
+      { korean: "밖", japanese: "밖" }, { korean: "꺾", japanese: "꺾" }, { korean: "꽃", japanese: "꽃" },
+      { korean: "빛", japanese: "빛" }, { korean: "낯", japanese: "낯" }, { korean: "밭", japanese: "밭" },
+      { korean: "숲", japanese: "숲" }, { korean: "히", japanese: "히" }, { korean: "읏", japanese: "읏" },
+      { korean: "읊", japanese: "읊" }, { korean: "잃", japanese: "잃" }, { korean: "핥", japanese: "핥" },
+      { korean: "밟", japanese: "밟" }
+    ]
+  }
+]
+
+    // Application State Variables
+    let problemSets = [];
+    let currentSet = null;
+    let lineIndex = 0;
+    let rawInput = "";
+    let typedText = "";
+    let wrongFinal = {};   // 確定済みで誤りの音節 { index: char }
+    let keyboardGuideVisible = true;
+    let awaitingAdvance = false; // 1行入力完了後、Space/Enterで次へ進むのを待っている状態
+    let currentCategoryFilter = "all";
+    let typingStarted = false;
+    let longWindowLineIndex = -1;
+
+    // Performance Stats
+    let startTime = null;
+    let timerInterval = null;
+    let errorCount = 0;
+    let totalTypedKeys = 0;
+
+    // 自作した問題集は localStorage に保存します（このブラウザ内に残り、更新しても消えません）
+    const CUSTOM_SETS_STORAGE_KEY = 'koreanTyping_customSets_v1';
+
+    function isPresetSet(set) {
+      return set.isPreset === true || set.id.startsWith('preset-');
+    }
+
+    function loadCustomSetsFromStorage() {
+      try {
+        const raw = localStorage.getItem(CUSTOM_SETS_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.map(set => {
+          if (!set || typeof set !== 'object') return set;
+          if (set.category === '会話') set.category = '短文';
+          return set;
+        });
+      } catch (err) {
+        console.warn('カスタム問題集の読み込みに失敗しました:', err);
+        return [];
+      }
+    }
+
+    function saveCustomSetsToStorage() {
+      try {
+        const customSets = problemSets.filter(s => !isPresetSet(s));
+        localStorage.setItem(CUSTOM_SETS_STORAGE_KEY, JSON.stringify(customSets));
+      } catch (err) {
+        console.warn('カスタム問題集の保存に失敗しました:', err);
+        alert('保存に失敗しました。ブラウザのストレージ容量をご確認ください。');
+      }
+    }
+
+    // Load Problem Sets（プリセット + localStorageに保存された自作の問題集）
+    async function loadProblemSets() {
+      const customSets = loadCustomSetsFromStorage();
+      problemSets = [...DEFAULT_PRESETS, ...customSets];
+      renderSetsGrid();
+    }
+
+    // JSONファイルとして書き出し（自作した問題集のみ。プリセットは含みません）
+    function exportCustomSetsToFile() {
+      const customSets = problemSets.filter(s => !isPresetSet(s));
+      if (customSets.length === 0) {
+        alert('書き出せる自作の問題集がありません。まずは「問題集を自作・投稿」から作成してください。');
+        return;
+      }
+      const blob = new Blob([JSON.stringify(customSets, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `korean-typing-custom-sets-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // JSONファイルから読み込み（同じIDの問題集は上書き、それ以外は追加）
+    function importCustomSetsFromFile(event) {
+      const file = event.target.files && event.target.files[0];
+      event.target.value = ''; // 同じファイルを連続で選べるようにリセット
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          const importedSets = Array.isArray(data) ? data : [data];
+
+          let addedCount = 0;
+          let updatedCount = 0;
+
+          importedSets.forEach(set => {
+            if (!set || !set.title || !Array.isArray(set.lines) || set.lines.length === 0) return;
+            if (!set.id || isPresetSet(set)) {
+              set.id = 'custom-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+              set.isPreset = false;
+            }
+            const existingIdx = problemSets.findIndex(s => s.id === set.id);
+            if (existingIdx >= 0) {
+              problemSets[existingIdx] = set;
+              updatedCount++;
+            } else {
+              problemSets.push(set);
+              addedCount++;
+            }
+          });
+
+          if (addedCount === 0 && updatedCount === 0) {
+            alert('有効な問題集が見つかりませんでした。ファイルの形式をご確認ください。');
+            return;
+          }
+
+          saveCustomSetsToStorage();
+          renderSetsGrid();
+          alert(`読み込み完了：追加 ${addedCount} 件 / 更新 ${updatedCount} 件`);
+        } catch (err) {
+          console.warn('JSON読み込みエラー:', err);
+          alert('ファイルの読み込みに失敗しました。正しいJSONファイルか確認してください。');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function switchTab(tab) {
+      document.getElementById('view-sets').classList.add('hidden');
+      document.getElementById('view-typing').classList.add('hidden');
+      document.getElementById('view-guide').classList.add('hidden');
+
+      if (tab === 'sets') {
+        document.getElementById('view-sets').classList.remove('hidden');
+      } else if (tab === 'typing') {
+        document.getElementById('view-typing').classList.remove('hidden');
+      } else if (tab === 'guide') {
+        document.getElementById('view-guide').classList.remove('hidden');
+      }
+      const guideToggle = document.getElementById('header-guide-toggle');
+      if (guideToggle) guideToggle.style.display = (tab === 'typing') ? 'flex' : 'none';
+    }
+
+    function setCategoryFilter(cat) {
+      currentCategoryFilter = cat;
+
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = 'cat-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap bg-purple-600 text-white shadow-sm';
+        } else {
+          btn.className = 'cat-btn px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
+        }
+      });
+
+      renderSetsGrid();
+    }
+
+    function goToCharacterCategory() {
+      switchTab('sets');
+      setCategoryFilter('文字');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderSetsGrid() {
+      const grid = document.getElementById('sets-grid');
+      grid.innerHTML = '';
+
+      let filtered = problemSets.filter(set => {
+        if (currentCategoryFilter === 'all') return true;
+        if (currentCategoryFilter === 'ユーザー') return !isPresetSet(set);
+        return set.category === currentCategoryFilter;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 p-6 space-y-2">
+            <p class="text-4xl">📭</p>
+            <p class="font-bold text-slate-700 dark:text-slate-300">該当する問題集がありません</p>
+            <p class="text-xs text-slate-400">新しい問題集を作成してみましょう！</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(set => {
+        const isPreset = isPresetSet(set);
+        const card = document.createElement('div');
+        card.className = 'bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-4 group';
+
+        card.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                set.category === '歌詞' ? 'bg-pink-100 text-pink-700 dark:bg-pink-950 dark:text-pink-300' :
+                set.category === '長文' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' :
+                set.category === '短文' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300' :
+                set.category === '単語' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' :
+                set.category === '文字' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300' :
+                'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+              }">
+                ${set.category || 'ユーザー投稿'}
+              </span>
+              <span class="text-xs text-slate-400 font-medium">
+                ${set.lines ? set.lines.length : 0} 行
+              </span>
+            </div>
+
+            <h3 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition leading-snug">
+              ${set.title}
+            </h3>
+
+            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+              ${set.description || 'タイピング練習セット'}
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+            <button onclick="startTypingSessionById('${set.id}')" class="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-sm transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-play text-xs"></i> スタート
+            </button>
+            ${!isPreset ? `
+              <button onclick="openEditModalById('${set.id}')" title="編集" class="w-9 h-9 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 rounded-xl flex items-center justify-center text-xs transition">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button onclick="deleteSetById('${set.id}')" title="削除" class="w-9 h-9 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-300 rounded-xl flex items-center justify-center text-xs transition">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            ` : ''}
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    function startTypingSessionById(id) {
+      const found = problemSets.find(s => s.id === id);
+      if (found) startTypingSession(found);
+    }
+
+    // カテゴリ別の出題ルール：単語＝25問、短文＝20問、文字＝30問をランダム出題。
+    // 歌詞・長文は今まで通り、収録順のまま全問出題する。
+    const RANDOM_QUIZ_RULES = { '単語': 25, '短文': 20, '文字': 30 };
+
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // 出題する行を決定する。ランダム対象カテゴリは、元のセットを崩さず毎回新しくシャッフルする。
+    // 文字カテゴリだけ、30問未満のセットでは既存行を再抽選して30問にする。
+    function getSessionLines(set) {
+      const targetCount = RANDOM_QUIZ_RULES[set.category];
+      if (!targetCount) return set.lines; // 歌詞・長文・ユーザー投稿は順番どおり
+      if (set.lines.length === 0) return [];
+      const shuffled = shuffleArray(set.lines);
+      const selected = shuffled.slice(0, Math.min(targetCount, shuffled.length));
+      if (set.category === '文字') {
+        while (selected.length < targetCount) {
+          selected.push(...shuffleArray(set.lines).slice(0, targetCount - selected.length));
+        }
+      }
+      return selected;
+    }
+
+    let currentSourceSet = null; // ランダム出題の再抽選用に、元の問題集（全問）を保持
+
+    function startTypingSession(set) {
+      closeSummaryModal();
+      currentSourceSet = set;
+      currentSet = { ...set, lines: getSessionLines(set) };
+      lineIndex = 0;
+      longWindowLineIndex = -1;
+      rawInput = "";
+      typedText = "";
+      wrongFinal = {};
+      awaitingAdvance = false;
+      typingStarted = false;
+      errorCount = 0;
+      totalTypedKeys = 0;
+      startTime = null;
+      if (timerInterval) clearInterval(timerInterval);
+      hideAdvanceHint();
+
+      document.getElementById('typing-set-title').textContent = set.title;
+      switchTab('typing');
+      renderLine();
+      showTypingStartScreen();
+    }
+
+    function resetTypingSession() {
+      if (currentSourceSet) startTypingSession(currentSourceSet);
+    }
+
+    function showTypingStartScreen() {
+      // Escで戻った場合も、必ず1問目からやり直せるようにリセット
+      typingStarted = false;
+      lineIndex = 0;
+      longWindowLineIndex = -1;
+      rawInput = "";
+      typedText = "";
+      wrongFinal = {};
+      awaitingAdvance = false;
+      errorCount = 0;
+      totalTypedKeys = 0;
+      startTime = null;
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      hideAdvanceHint();
+      if (currentSet) renderLine();
+
+      const screen = document.getElementById('typing-start-screen');
+      if (screen) {
+        screen.classList.remove('hidden');
+        screen.classList.add('flex');
+      }
+      const input = document.getElementById('typing-input');
+      if (input) {
+        input.value = '';
+        input.blur();
+      }
+    }
+
+    function startTypingFromStartScreen() {
+      if (!currentSet) return;
+      typingStarted = true;
+      const screen = document.getElementById('typing-start-screen');
+      if (screen) {
+        screen.classList.add('hidden');
+        screen.classList.remove('flex');
+      }
+      const input = document.getElementById('typing-input');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    function renderLine() {
+      if (!currentSet || lineIndex >= currentSet.lines.length) return;
+
+      const currentLine = currentSet.lines[lineIndex];
+      const targetText = currentLine.korean;
+      const jpnText = currentLine.japanese;
+
+      // Update progress metrics
+      document.getElementById('line-progress-text').textContent = `${lineIndex + 1} / ${currentSet.lines.length} 行目`;
+      document.getElementById('stat-progress').textContent = `${lineIndex + 1} / ${currentSet.lines.length}`;
+      
+      const pct = ((lineIndex) / currentSet.lines.length) * 100;
+      document.getElementById('line-progress-bar').style.width = `${pct}%`;
+
+      const isLongText = currentSet.category === '長文';
+      document.getElementById('standard-line-display').classList.toggle('hidden', isLongText);
+      document.getElementById('long-text-window').classList.toggle('hidden', !isLongText);
+
+      if (isLongText) {
+        renderLongTextWindow();
+      } else {
+        document.getElementById('japanese-translation-text').textContent = jpnText;
+        document.getElementById('korean-target-container').innerHTML =
+          Array.from(targetText).map(ch => `<span>${ch === ' ' ? '&nbsp;' : escapeHtml(ch)}</span>`).join('');
+        renderTypedDisplay(targetText);
+      }
+
+      // Highlight next virtual key to press
+      updateVirtualKeyboardHighlight(targetText);
+    }
+
+    function renderLongTextWindow() {
+      const windowEl = document.getElementById('long-text-window');
+      const linesEl = document.getElementById('long-text-lines');
+      const isNewActiveLine = longWindowLineIndex !== lineIndex;
+
+      if (isNewActiveLine) {
+        linesEl.innerHTML = currentSet.lines.map((line, index) => {
+          const isCurrent = index === lineIndex;
+          const rowClasses = isCurrent
+            ? 'border-indigo-500 bg-white dark:bg-slate-800 ring-2 ring-indigo-500/20 shadow-sm'
+            : 'border-transparent bg-white/50 dark:bg-slate-800/40 opacity-70';
+          const typedDisplay = isCurrent
+            ? '<div id="long-text-typed" class="korean-text mt-2 min-h-8 text-xl sm:text-2xl font-bold"></div>'
+            : '';
+          return `<article id="long-line-${index}" class="rounded-xl border-2 ${rowClasses} px-4 py-3 sm:px-5 sm:py-4 transition-colors">
+            <p class="korean-text text-xl sm:text-2xl lg:text-3xl font-bold leading-relaxed">${escapeHtml(line.korean)}</p>
+            <p class="mt-1 text-sm sm:text-base text-slate-500 dark:text-slate-400">${escapeHtml(line.japanese || '')}</p>
+            ${typedDisplay}
+          </article>`;
+        }).join('');
+        longWindowLineIndex = lineIndex;
+
+        if (lineIndex > 0) {
+          const activeRow = document.getElementById(`long-line-${lineIndex}`);
+          if (activeRow) {
+            const containerRect = windowEl.getBoundingClientRect();
+            const rowRect = activeRow.getBoundingClientRect();
+            const scrollTop = windowEl.scrollTop + rowRect.top - containerRect.top - windowEl.clientTop - 12;
+            windowEl.scrollTo({ top: scrollTop, behavior: 'smooth' });
+          }
+        }
+      }
+
+      const typedBox = document.getElementById('long-text-typed');
+      if (typedBox) renderTypedDisplay(currentSet.lines[lineIndex].korean, typedBox);
+    }
+
+    const HANGUL_RE = /[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7A3]/;
+
+    // 音節が確定済みか：最後の1文字（組み立て中）以外、およびハングル以外の文字は確定扱い
+    function isFinalizedAt(i) {
+      return i < typedText.length - 1 || !HANGUL_RE.test(typedText[i]);
+    }
+
+    // 確定済みで、お手本と異なる文字だけを返す
+    function getWrongFinalized(targetText) {
+      const wrong = {};
+      for (let i = 0; i < typedText.length; i++) {
+        if (isFinalizedAt(i) && typedText[i] !== targetText[i]) wrong[i] = typedText[i];
+      }
+      return wrong;
+    }
+
+    function escapeHtml(ch) {
+      return ch.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function renderTypedDisplay(targetText, box = document.getElementById('typed-converted-text')) {
+      const target = Array.from(targetText);
+      const typed = Array.from(typedText);
+      let html = '';
+      const len = Math.max(target.length, typed.length);
+
+      for (let i = 0; i < len; i++) {
+        if (i < typed.length) {
+          const ch = typed[i];
+          const shown = ch === ' ' ? '&nbsp;' : escapeHtml(ch);
+          if (!isFinalizedAt(i)) {
+            // 組み立て中：ミス扱いにしない（青＋下線）
+            html += `<span class="text-blue-500 dark:text-blue-400 underline underline-offset-4 decoration-2">${shown}</span>`;
+          } else if (ch === target[i]) {
+            html += `<span class="text-emerald-500 dark:text-emerald-400">${shown}</span>`;
+          } else if (ch === ' ') {
+            // 途中のSpaceの誤入力は見える印で表示
+            html += '<span class="inline-block w-[0.6em] h-[0.9em] align-middle rounded bg-rose-300/70 dark:bg-rose-500/50">&nbsp;</span>';
+          } else {
+            html += `<span class="text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 rounded">${shown}</span>`;
+          }
+        } else if (target[i] === ' ') {
+          html += '<span>&nbsp;</span>';
+        } else {
+          html += '<span class="text-slate-200 dark:text-slate-600">・</span>';
+        }
+      }
+      box.innerHTML = html;
+    }
+
+    function toggleKeyboardGuide() {
+      keyboardGuideVisible = !keyboardGuideVisible;
+      document.getElementById('keyboard-guide-card').classList.toggle('hidden', !keyboardGuideVisible);
+      document.getElementById('keyboard-toggle-label').textContent =
+        keyboardGuideVisible ? 'キーボードガイド 表示' : 'キーボードガイド 非表示';
+      focusTypingInput();
+    }
+
+    // 打つべきキー以外を押したとき、キーボードガイドの該当キーをグレーで塗りつぶす
+    const CODE_TO_GUIDE_KEY = {
+      Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Backslash: '\\',
+      Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', Space: ' ',
+      Enter: 'enter', NumpadEnter: 'enter', Backspace: 'backspace', ShiftLeft: 'shift-left', ShiftRight: 'shift-right'
+    };
+    function guideKeyFromEvent(e) {
+      if (CODE_TO_GUIDE_KEY[e.code]) return CODE_TO_GUIDE_KEY[e.code];
+      if (/^Key[A-Z]$/.test(e.code)) return e.code.slice(3).toLowerCase();
+      if (/^Digit[0-9]$/.test(e.code)) return e.code.slice(5);
+      return null;
+    }
+    function expectedGuideKeys() {
+      if (awaitingAdvance) return new Set(['enter', ' ']);
+      if (!currentSet || lineIndex >= currentSet.lines.length) return null;
+      const steps = getTargetKeySteps(currentSet.lines[lineIndex].korean);
+      const step = steps[Math.min(rawInput.length, steps.length - 1)];
+      if (!step) return null;
+      const set = new Set([step.key]);
+      if (step.shift) set.add('shift-left').add('shift-right');
+      return set;
+    }
+    function flagWrongKey(e) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const pressed = guideKeyFromEvent(e);
+      const expected = expectedGuideKeys();
+      if (!pressed || !expected || expected.has(pressed)) return;
+      document.querySelectorAll('#virtual-keyboard .key-cap').forEach(cap => {
+        if (cap.dataset.key === pressed) {
+          cap.classList.add('is-wrong-key');
+          clearTimeout(cap._wrongTimer);
+          cap._wrongTimer = setTimeout(() => cap.classList.remove('is-wrong-key'), 350);
+        }
+      });
+    }
+
+    function updateVirtualKeyboardHighlight(targetText) {
+      document.querySelectorAll('#virtual-keyboard .key-cap').forEach(key => {
+        key.classList.remove('is-current-key', 'ring-2', 'ring-purple-500', 'shadow-sm');
+      });
+      highlightFingers([]);
+
+      if (awaitingAdvance) {
+        document.getElementById('next-key-char').textContent = 'Enter / Space';
+        highlightKey('enter');
+        highlightKey(' ');
+        highlightFingers(['right-pinky', 'right-thumb']);
+        return;
+      }
+
+      const steps = getTargetKeySteps(targetText);
+      const step = steps[Math.min(rawInput.length, steps.length - 1)];
+      if (!step) {
+        document.getElementById('next-key-char').textContent = '-';
+        return;
+      }
+
+      const keyLabel = step.key === ' ' ? 'Space' : step.key.toUpperCase();
+      const displayKey = step.shift ? `Shift + ${keyLabel}` : keyLabel;
+      document.getElementById('next-key-char').textContent = displayKey;
+      highlightKey(step.key);
+
+      const activeFingers = [fingerForKey(step.key)];
+      if (step.shift) {
+        const shiftFinger = shiftFingerForKey(step.key);
+        activeFingers.push(shiftFinger);
+        highlightKey(shiftFinger === 'right-pinky' ? 'shift-right' : 'shift-left');
+      }
+      highlightFingers(activeFingers);
+
+    }
+
+    function highlightKey(keyName, keyboard = document.getElementById('virtual-keyboard')) {
+      if (!keyboard) return;
+      const targetKey = keyName === ' ' ? ' ' : keyName.toLowerCase();
+      keyboard.querySelectorAll('.key-cap').forEach(key => {
+        if (key.dataset.key === targetKey) {
+          key.classList.add('is-current-key', 'ring-2', 'ring-purple-500', 'shadow-sm');
+          if (keyboard && keyboard.scrollWidth > keyboard.clientWidth) {
+            const keyRect = key.getBoundingClientRect();
+            const keyboardRect = keyboard.getBoundingClientRect();
+            if (keyRect.left < keyboardRect.left) keyboard.scrollLeft += keyRect.left - keyboardRect.left;
+            else if (keyRect.right > keyboardRect.right) keyboard.scrollLeft += keyRect.right - keyboardRect.right;
+          }
+        }
+      });
+    }
+
+    function highlightFingers(fingerNames, guide = document.getElementById('keyboard-guide-card')) {
+      if (!guide) return;
+      const active = new Set(fingerNames.filter(Boolean));
+      guide.querySelectorAll('.finger-cap').forEach(finger => {
+        const isActive = active.has(finger.dataset.finger);
+        if (finger.dataset.tint) {
+          finger.setAttribute('fill', isActive ? '#8266e0' : finger.dataset.tint);
+          finger.setAttribute('stroke', 'none');
+        } else {
+          finger.setAttribute('fill', isActive ? '#7c3aed' : '#ffffff');
+          finger.setAttribute('stroke', isActive ? '#6d28d9' : '#94a3b8');
+        }
+      });
+      const fingerLabel = guide.id === 'keyboard-guide-card' && document.getElementById('next-finger-label');
+      if (fingerLabel) {
+        const names = [...active].map(f => FINGER_LABELS[f]).filter(Boolean);
+        fingerLabel.textContent = names.length ? '／ ' + names.join(' + ') : '';
+      }
+    }
+
+    function setupKeyboardGuides() {
+      const typingKeyboard = document.getElementById('virtual-keyboard');
+      if (typingKeyboard) buildTypingKeyboard(typingKeyboard);
+      const guideKeyboard = document.getElementById('guide-virtual-keyboard');
+      const example = 'ㄱ';
+      const [exampleStep] = getTargetKeySteps(example);
+      if (guideKeyboard && exampleStep) {
+        document.getElementById('guide-example-jamo').textContent = example;
+        document.getElementById('guide-next-finger').textContent = FINGER_LABELS[fingerForKey(exampleStep.key)] || '';
+        buildTypingKeyboard(guideKeyboard, { highlightKey: exampleStep.key });
+      }
+
+      const handArt = getFingerGuideMarkup();
+      document.querySelectorAll('.finger-guide').forEach(guide => {
+        guide.innerHTML = guide.closest('#keyboard-guide-card, #guide-keyboard-guide') ? getFingerStripMarkup() : handArt;
+      });
+      if (guideKeyboard && exampleStep) {
+        highlightFingers([fingerForKey(exampleStep.key)], document.getElementById('guide-keyboard-guide'));
+      }
+    }
+
+    // 打鍵画面のキーボード（2벌식の標準配列。ラベルはハングルのみ）
+    function buildTypingKeyboard(kb, options = {}) {
+      if (!kb) return;
+      const J = { q:['ㅃ','ㅂ'], w:['ㅉ','ㅈ'], e:['ㄸ','ㄷ'], r:['ㄲ','ㄱ'], t:['ㅆ','ㅅ'], y:[null,'ㅛ'], u:[null,'ㅕ'], i:[null,'ㅑ'], o:['ㅒ','ㅐ'], p:['ㅖ','ㅔ'],
+                  a:[null,'ㅁ'], s:[null,'ㄴ'], d:[null,'ㅇ'], f:[null,'ㄹ'], g:[null,'ㅎ'], h:[null,'ㅗ'], j:[null,'ㅓ'], k:[null,'ㅏ'], l:[null,'ㅣ'],
+                  z:[null,'ㅋ'], x:[null,'ㅌ'], c:[null,'ㅊ'], v:[null,'ㅍ'], b:[null,'ㅠ'], n:[null,'ㅜ'], m:[null,'ㅡ'] };
+      const sym = (k, top, base, u = 1) => ({ k, u, top, base, cls: 'vk-sym' });
+      const jam = k => ({ k, u: 1, top: J[k][0], base: J[k][1], cls: 'vk-jamo' });
+      const lab = (k, label, u, pos) => ({ k, u, label, pos });
+      const nums = '1234567890'.split('');
+      const numShift = { '1':'!', '2':'@', '3':'#', '4':'$', '5':'%', '6':'^', '7':'&', '8':'*', '9':'(', '0':')' };
+      const rows = [
+        [sym('`','~','`'), ...nums.map(n => sym(n, numShift[n], n)), sym('-','_','-'), sym('=','+','='), lab('backspace','Backspace',2,'r')],
+        [lab(null,'Tab',2,'l'), ...'qwertyuiop'.split('').map(jam), sym('[','{','['), sym(']','}',']'), sym('\\','|','\\')],
+        [lab(null,'Caps Lock',2,'l'), ...'asdfghjkl'.split('').map(jam), sym(';',':',';'), sym("'",'"',"'"), lab('enter','Enter',2,'r')],
+        [lab('shift-left','Shift',2.5,'l'), ...'zxcvbnm'.split('').map(jam), sym(',','<',','), sym('.','>','.'), sym('/','?','/'), lab('shift-right','Shift',2.5,'r')],
+        [lab(null,'Ctrl',1.15,'l'), lab(null,'Alt',1.15,'l'), lab(' ','',10.4,'l'), lab(null,'Alt',1.15,'r'), lab(null,'Ctrl',1.15,'r')]
+      ];
+      kb.innerHTML = '';
+      rows.forEach(r => {
+        const row = document.createElement('div');
+        row.className = 'vk-row';
+        r.forEach(spec => {
+          const cap = document.createElement('div');
+          cap.className = 'key-cap vk-key';
+          cap.style.setProperty('--u', spec.u);
+          if (spec.k !== null) cap.dataset.key = spec.k;
+          if (spec.label !== undefined) {
+            if (spec.label) cap.innerHTML = `<span class="vk-label ${spec.pos}">${spec.label}</span>`;
+          } else if (spec.top) {
+            cap.innerHTML = `<span class="${spec.cls}">${spec.top}</span><span class="${spec.cls}">${spec.base}</span>`;
+          } else {
+            cap.classList.add('vk-single');
+            cap.innerHTML = `<span class="${spec.cls}">${spec.base}</span>`;
+          }
+          row.appendChild(cap);
+        });
+        kb.appendChild(row);
+      });
+      if (options.highlightKey) highlightKey(options.highlightKey, kb);
+    }
+
+    // 指ライン：理想画像どおり、キーボード直下に灰色のバー（下端でクリップ）
+    function getFingerStripMarkup() {
+      const W = 68, tops = { pinky: 34, ring: 2, middle: 2, index: 2, thumb: 67 };
+      const L = { pinky: 2, ring: 78, middle: 154, index: 230, thumb: 305 };
+      const bar = (side, f) => {
+        const x = side === 'left' ? L[f] : 1050 - L[f] - W;
+        return `<rect class="finger-cap" data-finger="${side}-${f}" data-tint="#d9d9d9" x="${x}" y="${tops[f]}" width="${W}" height="${92 - tops[f] + 40}" rx="34" fill="#d9d9d9"/>`;
+      };
+      const fs = ['pinky','ring','middle','index','thumb'];
+      return `<div class="finger-strip"><svg viewBox="0 0 1050 92" role="img" aria-label="左右の指">${fs.map(f => bar('left', f)).join('')}${fs.map(f => bar('right', f)).join('')}</svg></div>`;
+    }
+
+    function getFingerGuideMarkup() {
+      return `<div class="mx-auto max-w-xl">
+        <svg class="w-full" viewBox="0 0 700 180" role="img" aria-label="左右の10本の指">
+          <g fill="#ffffff" stroke="#94a3b8" stroke-width="3" stroke-linejoin="round">
+            <rect class="finger-cap" data-finger="left-pinky" x="59" y="48" width="39" height="91" rx="19"/>
+            <rect class="finger-cap" data-finger="left-ring" x="101" y="25" width="40" height="113" rx="20"/>
+            <rect class="finger-cap" data-finger="left-middle" x="144" y="10" width="41" height="129" rx="20"/>
+            <rect class="finger-cap" data-finger="left-index" x="188" y="28" width="41" height="111" rx="20"/>
+            <rect class="finger-cap" data-finger="left-thumb" x="232" y="69" width="41" height="70" rx="20"/>
+            <g transform="translate(700 0) scale(-1 1)">
+              <rect class="finger-cap" data-finger="right-pinky" x="59" y="48" width="39" height="91" rx="19"/>
+              <rect class="finger-cap" data-finger="right-ring" x="101" y="25" width="40" height="113" rx="20"/>
+              <rect class="finger-cap" data-finger="right-middle" x="144" y="10" width="41" height="129" rx="20"/>
+              <rect class="finger-cap" data-finger="right-index" x="188" y="28" width="41" height="111" rx="20"/>
+              <rect class="finger-cap" data-finger="right-thumb" x="232" y="69" width="41" height="70" rx="20"/>
+            </g>
+          </g>
+          <g fill="#64748b" font-size="11" text-anchor="middle">
+            <text x="78" y="164">小指</text><text x="121" y="164">薬指</text><text x="164" y="164">中指</text><text x="208" y="164">人差し指</text><text x="252" y="164">親指</text>
+            <text x="447" y="164">親指</text><text x="492" y="164">人差し指</text><text x="535" y="164">中指</text><text x="579" y="164">薬指</text><text x="622" y="164">小指</text>
+          </g>
+        </svg>
+      </div>`;
+    }
+
+    function focusTypingInput() {
+      const input = document.getElementById('typing-input');
+      input.focus();
+    }
+
+    function isAdvanceKey(e) {
+      return e.key === ' ' || e.key === 'Spacebar' || e.code === 'Space' || e.key === 'Enter' || e.code === 'NumpadEnter';
+    }
+
+    // スタート画面：Space / Enterで開始、Escでスタート画面へ戻る
+    window.addEventListener('keydown', (e) => {
+      if (!currentSet) return;
+      const screen = document.getElementById('typing-start-screen');
+      const startVisible = screen && !screen.classList.contains('hidden');
+
+      if (startVisible && (e.key === ' ' || e.key === 'Enter')) {
+        e.preventDefault();
+        startTypingFromStartScreen();
+        return;
+      }
+
+      const typingView = document.getElementById('view-typing');
+      const summary = document.getElementById('modal-summary');
+      const targetIsControl = e.target.closest?.('button, a, input:not(#typing-input), textarea, select, [role="button"]');
+      if (currentSet.category === '長文' && typingStarted && awaitingAdvance && isAdvanceKey(e) &&
+          typingView && !typingView.classList.contains('hidden') &&
+          summary && summary.classList.contains('hidden') &&
+          !e.isComposing && e.keyCode !== 229 && !targetIsControl) {
+        e.preventDefault();
+        advanceLine();
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        if (typingView && !typingView.classList.contains('hidden') && summary && summary.classList.contains('hidden')) {
+          e.preventDefault();
+          showTypingStartScreen();
+        }
+      }
+    });
+
+    // Input listeners setup
+    window.addEventListener('DOMContentLoaded', () => {
+      setupKeyboardGuides();
+      loadProblemSets();
+
+      const input = document.getElementById('typing-input');
+      const typingView = document.getElementById('view-typing');
+      typingView.addEventListener('click', (e) => {
+        if (!typingStarted || e.target.closest('button, a, input, textarea, select, label, [role="button"], #typing-start-screen, #modal-summary')) return;
+        focusTypingInput();
+      });
+
+      // Keystroke / Input Event Handling
+      input.addEventListener('input', (e) => {
+        if (!currentSet) return;
+
+        // セッション終了後の入力は無視
+        if (lineIndex >= currentSet.lines.length) {
+          input.value = "";
+          return;
+        }
+
+        // 入力完了後はSpace/Enter以外の入力を受け付けない（誤って追加入力されるのを防ぐ）
+        if (awaitingAdvance) {
+          input.value = rawInput;
+          return;
+        }
+
+        let val = input.value;
+
+        // 行の最初（先頭）のSpaceは判定しない（前の行で押したSpaceの持ち越し防止）
+        // ※文字の途中のSpaceは、これまで通り正誤判定の対象
+        if (/^\s+/.test(val)) {
+          val = val.replace(/^\s+/, '');
+          input.value = val;
+          if (val === rawInput) return; // 先頭Spaceだけだった場合は何もしない
+        }
+
+        if (!startTime) {
+          startTime = Date.now();
+          timerInterval = setInterval(updateStats, 200);
+        }
+
+        rawInput = val;
+        totalTypedKeys++;
+        sound.playKey();
+
+        // Convert QWERTY input sequence to Hangul (or keep direct Hangul)
+        const currentTarget = currentSet.lines[lineIndex].korean;
+        typedText = parseWithTarget(rawInput, currentTarget);
+
+        // 確定済みの誤字だけをミスとして数える（組み立て中はミスにしない）
+        const wrongNow = getWrongFinalized(currentTarget);
+        let newErrors = 0;
+        for (const i in wrongNow) {
+          if (wrongFinal[i] !== wrongNow[i]) newErrors++;
+        }
+        wrongFinal = wrongNow;
+
+        if (typedText === currentTarget) {
+          sound.playSuccess();
+          awaitingAdvance = true;
+          showAdvanceHint();
+          renderLine();
+        } else {
+          if (newErrors > 0) {
+            errorCount += newErrors;
+            sound.playError();
+            shakeTypedText();
+          }
+          renderLine();
+        }
+
+        updateStats();
+      });
+
+      // Special Keys Listener
+      // ・1行を正しく打ち終えたら入力をロックし、Space/Enterで次へ進む
+      // ・行の先頭（未入力）でのSpaceは入力させない
+      input.addEventListener('keydown', (e) => {
+        if (!currentSet) return;
+        const finished = lineIndex >= currentSet.lines.length;
+
+        if (awaitingAdvance) {
+          flagWrongKey(e);
+          if ((e.key === ' ' || e.key === 'Enter') && !e.isComposing && e.keyCode !== 229) {
+            e.preventDefault();
+            awaitingAdvance = false;
+            hideAdvanceHint();
+            advanceLine();
+          } else if (e.key.length === 1) {
+            e.preventDefault(); // 完了後は通常の文字入力を無視
+          }
+          return;
+        }
+
+        flagWrongKey(e);
+
+        if (e.key === 'Enter') { e.preventDefault(); return; }
+        if (e.key === ' ' && (finished || input.value.length === 0)) {
+          e.preventDefault();
+        }
+      });
+    });
+
+    // テロップの表示切替：display（hidden）ではなく opacity/visibility を使うことで、
+    // 表示エリアの高さを常に確保したまま、レイアウトが上下しないようにする
+    function showAdvanceHint() {
+      const el = document.getElementById('advance-hint');
+      el.classList.remove('opacity-0', 'invisible');
+      el.classList.add('opacity-100', 'visible');
+    }
+    function hideAdvanceHint() {
+      const el = document.getElementById('advance-hint');
+      el.classList.add('opacity-0', 'invisible');
+      el.classList.remove('opacity-100', 'visible');
+    }
+
+    function advanceLine() {
+      lineIndex++;
+      rawInput = "";
+      typedText = "";
+      wrongFinal = {};
+      awaitingAdvance = false;
+      document.getElementById('typing-input').value = "";
+      hideAdvanceHint();
+
+      if (lineIndex >= currentSet.lines.length) {
+        finishSession();
+      } else {
+        renderLine();
+        document.getElementById('typing-input').focus();
+      }
+    }
+
+    function updateStats() {
+      if (!startTime) return;
+      const elapsedSec = (Date.now() - startTime) / 1000;
+      const cpm = Math.round((totalTypedKeys / Math.max(0.1, elapsedSec)) * 60);
+      const acc = Math.max(0, Math.round(((totalTypedKeys - errorCount) / Math.max(1, totalTypedKeys)) * 100));
+
+      document.getElementById('stat-cpm').textContent = cpm;
+      document.getElementById('speed-indicator').textContent = `${cpm} CPM`;
+      document.getElementById('stat-accuracy').textContent = `${acc}%`;
+      document.getElementById('stat-errors').textContent = errorCount;
+    }
+
+    function finishSession() {
+      if (timerInterval) clearInterval(timerInterval);
+
+      const elapsedSec = (Date.now() - startTime) / 1000;
+      const mins = Math.floor(elapsedSec / 60);
+      const secs = Math.floor(elapsedSec % 60);
+      const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      
+      const cpm = Math.round((totalTypedKeys / Math.max(0.1, elapsedSec)) * 60);
+      const acc = Math.max(0, Math.round(((totalTypedKeys - errorCount) / Math.max(1, totalTypedKeys)) * 100));
+
+      document.getElementById('summary-set-title').textContent = currentSet.title;
+      document.getElementById('summary-time').textContent = timeStr;
+      document.getElementById('summary-accuracy').textContent = `${acc}%`;
+      document.getElementById('summary-cpm').textContent = cpm;
+      document.getElementById('summary-errors').textContent = errorCount;
+
+      document.getElementById('modal-summary').classList.remove('hidden');
+    }
+
+    function closeSummaryModal() {
+      document.getElementById('modal-summary').classList.add('hidden');
+    }
+
+    function openCreateModal() {
+      document.getElementById('form-set-id').value = '';
+      document.getElementById('modal-create-title').textContent = '問題集の新規作成';
+      document.getElementById('form-title').value = '';
+      document.getElementById('form-category').value = '歌詞';
+      document.getElementById('form-description').value = '';
+      clearBulkFormLines();
+
+      const container = document.getElementById('form-lines-container');
+      container.innerHTML = '';
+      
+      // Default 10 blank rows
+      for (let i = 0; i < 10; i++) {
+        addFormLineRow();
+      }
+
+      document.getElementById('modal-create').classList.remove('hidden');
+    }
+
+    function openEditModalById(id) {
+      const set = problemSets.find(s => s.id === id);
+      if (!set) return;
+
+      document.getElementById('form-set-id').value = set.id;
+      document.getElementById('modal-create-title').textContent = '問題集の編集';
+      document.getElementById('form-title').value = set.title;
+      document.getElementById('form-category').value = ['歌詞','長文','短文','単語'].includes(set.category) ? set.category : '短文';
+      document.getElementById('form-description').value = set.description || '';
+      clearBulkFormLines();
+
+      const container = document.getElementById('form-lines-container');
+      container.innerHTML = '';
+
+      set.lines.forEach(line => {
+        addFormLineRow(line.korean, line.japanese);
+      });
+
+      document.getElementById('modal-create').classList.remove('hidden');
+    }
+
+    function closeCreateModal() {
+      document.getElementById('modal-create').classList.add('hidden');
+    }
+
+    function addFormLineRow(korean = '', japanese = '') {
+      const container = document.getElementById('form-lines-container');
+      const idx = container.children.length + 1;
+
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-2 bg-slate-50 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200/60 dark:border-slate-700/60';
+      row.innerHTML = `
+        <span class="text-xs font-bold text-slate-400 w-5 text-center shrink-0">${idx}</span>
+        <input type="text" placeholder="韓国語 (例: 안녕하세요)" value="${korean}" required class="line-kr w-1/2 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs korean-text focus:outline-none focus:border-purple-500">
+        <input type="text" placeholder="日本語訳 (例: こんにちは)" value="${japanese}" required class="line-jp w-1/2 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:outline-none focus:border-purple-500">
+        <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-rose-500 p-1 text-xs">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      `;
+
+      container.appendChild(row);
+      row.querySelector('.line-kr').value = korean;
+      row.querySelector('.line-jp').value = japanese;
+    }
+
+    function clearBulkFormLines() {
+      document.getElementById('bulk-korean').value = '';
+      document.getElementById('bulk-japanese').value = '';
+      document.getElementById('bulk-lines-status').textContent = '';
+    }
+
+    function addBulkFormLines() {
+      const koreanLines = document.getElementById('bulk-korean').value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      const japaneseLines = document.getElementById('bulk-japanese').value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      const status = document.getElementById('bulk-lines-status');
+
+      if (!koreanLines.length && !japaneseLines.length) {
+        status.textContent = '韓国語と日本語を入力してください。';
+        return;
+      }
+      if (koreanLines.length !== japaneseLines.length) {
+        status.textContent = `行数が一致しません（韓国語 ${koreanLines.length} 行、日本語 ${japaneseLines.length} 行）。`;
+        return;
+      }
+
+      koreanLines.forEach((korean, index) => addFormLineRow(korean, japaneseLines[index]));
+      clearBulkFormLines();
+      status.textContent = `${koreanLines.length} 件を問題リストに追加しました。`;
+    }
+
+    async function handleSaveSet(e) {
+      e.preventDefault();
+
+      const id = document.getElementById('form-set-id').value || `custom-${Date.now()}`;
+      const title = document.getElementById('form-title').value.trim();
+      const category = document.getElementById('form-category').value;
+      const description = document.getElementById('form-description').value.trim();
+
+      const krInputs = document.querySelectorAll('.line-kr');
+      const jpInputs = document.querySelectorAll('.line-jp');
+
+      const lines = [];
+      for (let i = 0; i < krInputs.length; i++) {
+        const kr = krInputs[i].value.trim();
+        const jp = jpInputs[i].value.trim();
+        if (kr && jp) {
+          lines.push({ korean: kr, japanese: jp });
+        }
+      }
+
+      if (lines.length < 3) {
+        alert("少なくとも3行以上のフレーズを入力してください。");
+        return;
+      }
+
+      const newSet = { id, title, category, description, lines };
+
+      // Update Local Array
+      const existingIdx = problemSets.findIndex(s => s.id === id);
+      if (existingIdx >= 0) {
+        problemSets[existingIdx] = newSet;
+      } else {
+        problemSets.push(newSet);
+      }
+
+      // localStorageに保存（ページを更新しても消えません）
+      saveCustomSetsToStorage();
+
+      closeCreateModal();
+      renderSetsGrid();
+      switchTab('sets');
+    }
+
+    function deleteSetById(id) {
+      if (!confirm('この問題集を削除しますか？この操作は取り消せません。')) return;
+      problemSets = problemSets.filter(s => s.id !== id);
+      saveCustomSetsToStorage();
+      renderSetsGrid();
+    }
+  </script>
+</body>
+</html>
