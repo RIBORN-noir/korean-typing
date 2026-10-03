@@ -2297,7 +2297,26 @@
         return;
       }
 
-      koreanLines.forEach((korean, index) => addFormLineRow(korean, japaneseLines[index]));
+  const container = document.getElementById('form-lines-container');
+
+  koreanLines.forEach((korean, index) => {
+    const rows = Array.from(container.children);
+
+    // まだ空の行があれば、そこへ入力する
+    const emptyRow = rows.find(row => {
+      const kr = row.querySelector('.line-kr')?.value.trim();
+      const jp = row.querySelector('.line-jp')?.value.trim();
+      return !kr && !jp;
+    });
+
+    if (emptyRow) {
+      emptyRow.querySelector('.line-kr').value = korean;
+      emptyRow.querySelector('.line-jp').value = japaneseLines[index];
+    } else {
+      // 空白行がなければ、新しい行を追加する
+      addFormLineRow(korean, japaneseLines[index]);
+    }
+  });
       clearBulkFormLines();
       status.textContent = `${koreanLines.length} 件を問題リストに追加しました。`;
     }
