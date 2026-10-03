@@ -1798,9 +1798,28 @@
     }
     function flagWrongKey(e) {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      const pressed = guideKeyFromEvent(e);
+
       const expected = expectedGuideKeys();
-      if (!pressed || !expected || expected.has(pressed)) return;
+      if (!expected) return;
+
+      // 記号・句読点などは「実際に入力された文字」で正誤を見る。
+      // US/JISで物理キーの位置が違っていても、
+      // お手本と同じ文字が入力されていれば「間違ったキー」と表示しない。
+      const steps = currentSet && lineIndex < currentSet.lines.length
+        ? getTargetKeySteps(currentSet.lines[lineIndex].korean)
+        : null;
+      const step = steps
+        ? steps[Math.min(rawInput.length, steps.length - 1)]
+        : null;
+
+      if (step && step.targetChar && !/[A-Za-z\uAC00-\uD7A3]/.test(step.targetChar)) {
+        if (e.key === step.targetChar) return;
+      }
+
+      // ハングル・英字などは、これまでどおり物理キー位置で判定する。
+      const pressed = guideKeyFromEvent(e);
+      if (!pressed || expected.has(pressed)) return;
+
       document.querySelectorAll('#virtual-keyboard .key-cap').forEach(cap => {
         if (cap.dataset.key === pressed) {
           cap.classList.add('is-wrong-key');
