@@ -65,13 +65,37 @@
       transition: all 0.08s ease-in-out;
     }
     .key-cap.is-current-key,
-    .key-cap.is-current-key * {
-      color: #6d28d9 !important;
+    .dark .key-cap.is-current-key {
+      background-color: #7c3aed !important;
     }
+    .key-cap.is-current-key,
+    .key-cap.is-current-key *,
     .dark .key-cap.is-current-key,
     .dark .key-cap.is-current-key * {
-      color: #c4b5fd !important;
+      color: #ffffff !important;
     }
+    /* 打つべきキー以外を押したとき：グレー塗りつぶし (Gray 400) */
+    .key-cap.is-wrong-key,
+    .dark .key-cap.is-wrong-key {
+      background-color: #9CA3AF !important;
+    }
+    .key-cap.is-wrong-key,
+    .key-cap.is-wrong-key *,
+    .dark .key-cap.is-wrong-key,
+    .dark .key-cap.is-wrong-key * {
+      color: #ffffff !important;
+    }
+    /* ミス時の入力文字シェイク */
+    @keyframes typo-shake {
+      0%, 100% { transform: translateX(0); }
+      15% { transform: translateX(-8px); }
+      30% { transform: translateX(7px); }
+      45% { transform: translateX(-6px); }
+      60% { transform: translateX(5px); }
+      75% { transform: translateX(-3px); }
+      90% { transform: translateX(2px); }
+    }
+    .typo-shake { animation: typo-shake 0.35s ease-in-out; }
     /* Custom scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
@@ -87,92 +111,90 @@
     ::-webkit-scrollbar-thumb:hover {
       background: rgba(139, 92, 246, 0.6);
     }
+
+    main:has(#view-sets:not(.hidden)) {
+  justify-content: flex-start;
+}
   </style>
 
-<style id="fit-to-screen-layout">
-/* ===== v9: 指ガイドは「細い1行」、キーは指ごとに色分け、ガイド表示中は1画面に収める ===== */
-@media (min-width: 1024px) and (min-height: 680px) {
-  main:has(#view-typing:not(.hidden) #keyboard-guide-card:not(.hidden)) {
-    padding-top: 12px; padding-bottom: 12px; justify-content: flex-start;
+<style id="v14-layout">
+/* ===== v14: 理想画像（1920x1080）に合わせたタイピング画面 ===== */
+#view-typing,
+#view-guide {
+  /* キー1段ぶんの高さ（行ピッチ）。画面の高さに応じて 36px〜71.5px。狭い幅では横幅に合わせて縮む */
+  --kh: min(clamp(36px, calc(8.8vh - 23.5px), 71.5px), calc((100vw - 96px) / 14.7));
+}
+#view-guide { max-width: 72rem; }
+@media (min-width: 1024px) and (min-height: 600px) {
+  main:has(#view-typing:not(.hidden)) { padding-top: 12px; padding-bottom: 24px; justify-content: flex-start; }
+  #view-typing:not(.hidden) {
+    display: flex; flex-direction: column; gap: 18px;
+    height: calc(100dvh - 65px - 36px); min-height: 0;
   }
-  #view-typing:not(.hidden):has(#keyboard-guide-card:not(.hidden)) {
-    --kh: clamp(24px, 3.8vh, 38px);
-    display: flex; flex-direction: column; gap: 8px;
-    height: calc(100dvh - 65px - 24px); min-height: 0;
-  }
-  #view-typing:not(.hidden):has(#keyboard-guide-card:not(.hidden)) > * { margin: 0 !important; }
+  #view-typing > * { margin: 0 !important; }
+  #view-typing > :nth-child(1) { flex: 0 0 auto; padding-top: 10px; padding-bottom: 10px; }
 
-  /* 1) 上のバー */
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) > :nth-child(1) { flex: 0 0 auto; padding-top: 8px; padding-bottom: 8px; }
-
-  /* 2) 問題カード：残りの高さを使う。足りなければカード内スクロール */
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) > :nth-child(2) {
-    flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 12px 20px;
-    display: flex; flex-direction: column; justify-content: flex-start; gap: 8px;
+  /* 問題カード：残りの高さをすべて使う */
+  #view-typing > :nth-child(2) {
+    flex: 1 1 0; min-height: 0; overflow: hidden;
+    display: flex; flex-direction: column; gap: 6px; padding: 12px 20px 12px;
   }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) > :nth-child(2) > * { margin: 0 !important; }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) #standard-line-display:not(.hidden) {
-    display: flex; flex-direction: column; gap: clamp(4px, 1.2vh, 12px); padding: 0;
+  #view-typing > :nth-child(2) > * { margin: 0 !important; }
+  #view-typing > :nth-child(2) > .relative:not(#typing-footer-row) { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  #view-typing #standard-line-display:not(.hidden) {
+    flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    gap: clamp(6px, 1.7vh, 20px); padding: 0;
   }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) #standard-line-display:not(.hidden) > * { margin: 0 !important; }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) #korean-target-container,
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) #typed-converted-text {
-    min-height: 2.4rem; font-size: clamp(1.5rem, 3.6vh, 2.25rem); line-height: 1.4;
-  }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) #japanese-translation-text { font-size: clamp(1rem, 2.2vh, 1.25rem); }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) #advance-hint { padding-top: 0; padding-bottom: 0; }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) #long-text-window { height: clamp(120px, 22vh, 240px); min-height: 0; max-height: none; }
-
-  /* 3) ガイド表示切替ボタン */
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) > :nth-child(3) { flex: 0 0 auto; }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) > :nth-child(3) button { padding-top: 5px; padding-bottom: 5px; }
-
-  /* 4) キーボードガイド：縦に「キーボード → 細い指ライン」 */
-  #keyboard-guide-card:not(.hidden) { flex: 0 0 auto; overflow: auto; padding: 8px 16px 6px; display: flex; flex-direction: column; gap: 4px; }
-  #keyboard-guide-card:not(.hidden) > * { margin: 0 !important; }
-  #keyboard-guide-card:not(.hidden) > :nth-child(2) { padding-top: 3px; padding-bottom: 3px; }
-  #keyboard-guide-card:not(.hidden) #virtual-keyboard { gap: 4px; }
-  #keyboard-guide-card:not(.hidden) #virtual-keyboard .key-cap { height: var(--kh) !important; }
-  #keyboard-guide-card:not(.hidden) .finger-guide { border-top: 0; padding: 0; margin: 0; }
+  #view-typing #standard-line-display > * { margin: 0 !important; }
+  #view-typing #korean-target-container,
+  #view-typing #typed-converted-text { font-size: clamp(1.75rem, 6.6vh, 4.5rem); line-height: 1.15; min-height: 0; }
+  #view-typing #japanese-translation-text { font-size: clamp(1rem, 2.6vh, 1.75rem); line-height: 1.3; }
+  #view-typing #standard-line-display hr { width: 26rem; max-width: 80%; }
+  #view-typing #long-text-window:not(.hidden) { flex: 1 1 auto; height: auto; min-height: 120px; max-height: none; }
 }
 
-/* 指ライン（細い1行）：キーボードと同じ幅 */
-.finger-strip { max-width: 42rem; margin: 0 auto; }
-.finger-strip svg { width: 100%; height: auto; display: block; }
-.finger-strip text { fill: #64748b; font-size: 12px; }
-.dark .finger-strip text { fill: #94a3b8; }
-</style>
-<style id="v12-layout">
-/* ===== v12: キー中央寄せ / 統計統合 / 長文モード拡張 ===== */
-@media (min-width: 1024px) and (min-height: 680px) {
-  /* キーボードを中央に（旧: margin:0 !important に潰されて左寄りだった） */
-  #keyboard-guide-card:not(.hidden) #virtual-keyboard { margin-left: auto !important; margin-right: auto !important; width: 100%; }
-  /* 問題カード上部の余白を詰める */
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) > :nth-child(2) { padding: 8px 20px 10px; gap: 6px; }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) #metrics-line { gap: 4px; }
+/* 問題カード下段：左=次に入力するキー / 右=入力完了ヒント */
+#view-typing #typing-footer-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex: 0 0 auto; min-height: 22px; }
+#view-typing #advance-hint { padding: 0; }
+#view-typing:has(#keyboard-guide-card.hidden) #next-key-hint { display: none; }  /* ガイドOFF時は答えのヒントも隠す */
 
-  /* 問題カードはモードに関係なく残りの高さを使う */
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) > :nth-child(2) { flex: 1 1 0; }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) > :nth-child(2) > .relative {
-    flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
-  }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) #standard-line-display:not(.hidden) {
-    flex: 1 1 auto; justify-content: center;
-  }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) #long-text-window:not(.hidden) {
-    flex: 1 1 auto; height: auto; min-height: 150px; max-height: none;
-  }
-  /* 長文モードは「入力完了」ヒント行の余白も詰める */
-  #view-typing:has(#long-text-window:not(.hidden)) #advance-hint { padding-top: 0; padding-bottom: 0; }
-  #view-typing:has(#keyboard-guide-card:not(.hidden)) > :nth-child(2) > .relative.grid {
-    flex: 0 0 auto; margin-top: 0 !important;
-  }
-
-  /* 長文モード（ガイド非表示）：高さに応じて広げる */
-  #view-typing:has(#keyboard-guide-card.hidden) #long-text-window:not(.hidden) { height: clamp(250px, 56vh, 560px); max-height: none; }
+/* キーボードカード：白カード＋下端に指（下端でクリップ） */
+#keyboard-guide-card:not(.hidden) {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center;
+  padding: 11px 16px 0; gap: clamp(6px, 1.1vh, 12px); overflow: hidden;
 }
-</style>
+#keyboard-guide-card > * { margin: 0 !important; }
+.typing-virtual-keyboard { width: min(100%, calc(var(--kh) * 14.7)); display: flex; flex-direction: column; gap: 0; }
+.typing-virtual-keyboard .vk-row { display: flex; width: 100%; }
+.typing-virtual-keyboard .vk-key {
+  --kg: clamp(1.5px, calc(var(--kh) * .042), 3px);
+  flex: 0 0 calc(var(--u) * 100% / 15 - 2 * var(--kg));
+  height: calc(var(--kh) - 2 * var(--kg)); margin: var(--kg); box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-evenly;
+  position: relative; line-height: 1; color: #6b7280; background: #fff;
+  border: 1px solid #e2e8f0; border-radius: clamp(5px, calc(var(--kh) * .12), 9px);
+  box-shadow: 0 1px 2px rgba(15,23,42,.12), 0 2px 5px rgba(15,23,42,.06);
+}
+.typing-virtual-keyboard .vk-key.vk-single { justify-content: center; }
+.typing-virtual-keyboard .vk-sym  { font-size: clamp(9px, calc(var(--kh) * .2), 14px); }
+.typing-virtual-keyboard .vk-jamo { font-size: clamp(8px, calc(var(--kh) * .16), 11.5px); }
+.typing-virtual-keyboard .vk-label {
+  position: absolute; bottom: clamp(3px, calc(var(--kh) * .1), 8px);
+  font-size: clamp(7.5px, calc(var(--kh) * .16), 11.5px); font-family: 'Noto Sans JP', sans-serif;
+}
+.typing-virtual-keyboard .vk-label.l { left: clamp(4px, calc(var(--kh) * .11), 8px); }
+.typing-virtual-keyboard .vk-label.r { right: clamp(4px, calc(var(--kh) * .11), 8px); }
+.dark .typing-virtual-keyboard .vk-key { background: #334155; border-color: #475569; color: #cbd5e1; }
 
+.guide-keyboard-viewport { width: 100%; overflow-x: auto; }
+.guide-keyboard-viewport .typing-virtual-keyboard { width: calc(var(--kh) * 14.7); max-width: none; margin-inline: auto; }
+.guide-keyboard-viewport .finger-guide { width: calc(var(--kh) * 14.7); padding: 0; line-height: 0; margin-inline: auto; }
+#guide-keyboard-guide { padding-left: 10px; padding-right: 10px; }
+
+/* 指：下端クリップの灰色バー */
+#keyboard-guide-card .finger-guide { width: min(100%, calc(var(--kh) * 14.7)); border: 0; padding: 0; line-height: 0; }
+.finger-strip svg { display: block; width: 100%; height: auto; }
+</style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-full flex flex-col antialiased selection:bg-purple-200 dark:selection:bg-purple-900 selection:text-purple-900">
 
@@ -213,8 +235,29 @@
           </button>
 
           <!-- Audio Mute Toggle -->
-          <button onclick="toggleAudio()" id="audio-toggle-btn" title="効果音オン/オフ" class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          <div class="relative" id="audio-wrap">
+          <button onclick="toggleAudioPanel(event)" id="audio-toggle-btn" title="音量・効果音の設定" class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
             <i class="fa-solid fa-volume-high text-base" id="audio-icon"></i>
+          </button>
+          <div id="audio-panel" class="hidden absolute right-0 top-full mt-2 w-64 z-50 p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl text-sm text-slate-700 dark:text-slate-200">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold">音量</span>
+              <span id="audio-volume-label" class="font-mono text-xs text-slate-500 dark:text-slate-400">75%</span>
+            </div>
+            <input type="range" id="audio-volume" min="0" max="4" step="0.05" value="3" oninput="setAudioVolume(this.value)" class="w-full accent-purple-600 cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-400 mt-0.5"><span>0%</span><span>50%</span><span>100%</span></div>
+            <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 space-y-2">
+              <label class="flex items-center justify-between cursor-pointer"><span>タイプ音</span><input type="checkbox" id="audio-chk-key" checked onchange="setAudioToggle('key', this.checked)" class="w-4 h-4 accent-purple-600"></label>
+              <label class="flex items-center justify-between cursor-pointer"><span>正解音</span><input type="checkbox" id="audio-chk-success" checked onchange="setAudioToggle('success', this.checked)" class="w-4 h-4 accent-purple-600"></label>
+              <label class="flex items-center justify-between cursor-pointer"><span>ミス音</span><input type="checkbox" id="audio-chk-error" checked onchange="setAudioToggle('error', this.checked)" class="w-4 h-4 accent-purple-600"></label>
+            </div>
+          </div>
+          </div>
+
+          <!-- キーボードガイド 表示/非表示（タイピング画面のときだけ表示） -->
+          <button type="button" id="header-guide-toggle" onclick="toggleKeyboardGuide()" style="display:none" class="px-3 py-2 text-sm font-medium rounded-xl transition items-center gap-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <i class="fa-solid fa-keyboard"></i>
+            <span id="keyboard-toggle-label" class="hidden sm:inline">キーボードガイド 表示</span>
           </button>
         </nav>
       </div>
@@ -363,103 +406,24 @@
             </div>
           </div>
 
-          <!-- テロップ表示エリア：常に同じ高さを確保し、表示/非表示でレイアウトが上下しないようにする -->
-          <div class="relative grid mt-2" style="grid-template-areas:'stack';">
-            <!-- 完了して次へ進める時のヒント（Space／Enterで進む） -->
-            <div id="advance-hint" class="opacity-0 invisible [grid-area:stack] self-center text-center text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1.5 py-3 transition-opacity duration-150 animate-pulse">
-              <i class="fa-solid fa-circle-check"></i> 入力完了！ Space か Enter で次へ進む
-            </div>
-
-          </div>
-        </div>
-
-        <!-- キーボードガイド 表示／非表示トグル -->
-        <div class="flex justify-center">
-          <button type="button" onclick="toggleKeyboardGuide()" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-300 transition flex items-center gap-2 shadow-sm">
-            <i class="fa-solid fa-keyboard"></i>
-            <span id="keyboard-toggle-label">キーボードガイド 非表示</span>
-          </button>
-        </div>
-
-        <!-- Interactive On-Screen Virtual Keyboard Guide -->
-        <div id="keyboard-guide-card" class="bg-white dark:bg-slate-800 rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-md space-y-3">
-          <div class="flex items-center justify-between px-1">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-keyboard"></i> キー配列ガイド (2벌식 / Dubeolsik)
-            </span>
+          <!-- 下段：左=次に入力するキー / 右=入力完了ヒント -->
+          <div id="typing-footer-row">
             <span id="next-key-hint" class="text-xs font-medium text-purple-600 dark:text-purple-400">
               次に入力するキー: <span class="font-bold underline uppercase" id="next-key-char">-</span>
               <span id="next-finger-label" class="ml-1 font-bold"></span>
             </span>
-          </div>
-          <div class="key-breakdown-guide rounded-xl bg-slate-50 dark:bg-slate-900/50 px-3 py-2 text-center text-xs sm:text-sm" aria-live="polite">
-            <span data-guide-syllable class="font-bold text-slate-800 dark:text-white">-</span>
-            <span class="mx-1 text-slate-400">→</span>
-            <span data-guide-components class="text-slate-600 dark:text-slate-300">-</span>
-          </div>
-
-          <!-- Virtual Keyboard Layout Container -->
-          <div class="flex flex-col gap-1.5 max-w-2xl mx-auto select-none" id="virtual-keyboard">
-            <!-- Row 1: Numbers -->
-            <div class="flex justify-center gap-1 text-xs">
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="1">1</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="2">2</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="3">3</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="4">4</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="5">5</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="6">6</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="7">7</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="8">8</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="9">9</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="0">0</div>
+            <div class="relative grid" style="grid-template-areas:'stack';">
+              <div id="advance-hint" class="opacity-0 invisible [grid-area:stack] self-center text-center text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1.5 py-3 transition-opacity duration-150 animate-pulse">
+              <i class="fa-solid fa-circle-check"></i> 入力完了！ Space か Enter で次へ進む
             </div>
-
-            <!-- Row 2: QWERTY Row -->
-            <div class="flex justify-center gap-1 text-xs">
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="q"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">Q</span><span class="font-bold text-sm korean-text">ㅂ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="w"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">W</span><span class="font-bold text-sm korean-text">ㅈ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="e"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">E</span><span class="font-bold text-sm korean-text">ㄷ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="r"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">R</span><span class="font-bold text-sm korean-text">ㄱ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="t"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">T</span><span class="font-bold text-sm korean-text">ㅅ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="y"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">Y</span><span class="font-bold text-sm korean-text">ㅛ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="u"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">U</span><span class="font-bold text-sm korean-text">ㅕ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="i"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">I</span><span class="font-bold text-sm korean-text">ㅑ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="o"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">O</span><span class="font-bold text-sm korean-text">ㅐ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="p"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">P</span><span class="font-bold text-sm korean-text">ㅔ</span></div>
-            </div>
-
-            <!-- Row 3: ASDF Row -->
-            <div class="flex justify-center gap-1 text-xs">
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="a"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">A</span><span class="font-bold text-sm korean-text">ㅁ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="s"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">S</span><span class="font-bold text-sm korean-text">ㄴ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="d"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">D</span><span class="font-bold text-sm korean-text">ㅇ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="f"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">F</span><span class="font-bold text-sm korean-text">ㄹ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="g"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">G</span><span class="font-bold text-sm korean-text">ㅎ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="h"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">H</span><span class="font-bold text-sm korean-text">ㅗ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="j"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">J</span><span class="font-bold text-sm korean-text">ㅓ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="k"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">K</span><span class="font-bold text-sm korean-text">ㅏ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="l"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">L</span><span class="font-bold text-sm korean-text">ㅣ</span></div>
-            </div>
-
-            <!-- Row 4: ZXCV Row -->
-            <div class="flex justify-center gap-1 text-xs">
-              <div class="key-cap w-12 h-10 bg-slate-200 dark:bg-slate-700/90 rounded-lg flex items-center justify-center font-xs text-slate-500 font-mono" data-key="shift">Shift</div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="z"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">Z</span><span class="font-bold text-sm korean-text">ㅋ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="x"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">X</span><span class="font-bold text-sm korean-text">ㅌ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="c"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">C</span><span class="font-bold text-sm korean-text">ㅊ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="v"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">V</span><span class="font-bold text-sm korean-text">ㅍ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="b"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">B</span><span class="font-bold text-sm korean-text">ㅠ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="n"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">N</span><span class="font-bold text-sm korean-text">ㅜ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="m"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">M</span><span class="font-bold text-sm korean-text">ㅡ</span></div>
-              <div class="key-cap w-12 h-10 bg-slate-200 dark:bg-slate-700/90 rounded-lg flex items-center justify-center font-xs text-slate-500 font-mono" data-key="backspace">BS</div>
-            </div>
-
-            <!-- Row 5: Spacebar -->
-            <div class="flex justify-center gap-1 text-xs mt-0.5">
-              <div class="key-cap w-48 sm:w-64 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center text-slate-400 font-sans text-xs" data-key=" ">Space</div>
             </div>
           </div>
-          <div class="finger-guide mt-3 border-t border-slate-100 dark:border-slate-700 pt-3"></div>
+        </div>
+
+        <!-- Interactive On-Screen Virtual Keyboard Guide（キーはJSで生成） -->
+        <div id="keyboard-guide-card" class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 shadow-md">
+          <div id="virtual-keyboard" class="typing-virtual-keyboard select-none"></div>
+          <div class="finger-guide"></div>
         </div>
       </section>
 
@@ -479,7 +443,7 @@
           <div class="space-y-3">
             <h3 class="font-bold text-lg text-slate-900 dark:text-white">① ハングルは「パーツ」を組み立てて1文字にする</h3>
             <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              ハングルは、子音（자음）と母音（모음）などのパーツを組み合わせて、1つの文字の形にします。
+              ハングルは、子音（자음）と母音（모음）などのパーツを組み合わせて、1つの文字の形にします。<br>
               日本語の「k」｢a｣を <strong>「か」という1文字として入力する</strong>のと同じように、韓国語では組み合わせた結果が1つの音節になります。
             </p>
             <div class="grid sm:grid-cols-2 gap-3">
@@ -513,7 +477,8 @@
           <div class="space-y-3">
             <h3 class="font-bold text-lg text-slate-900 dark:text-white">③ 濃音（強く発音する子音）</h3>
             <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              子音には、同じ形を重ねた濃音もあります。<span class="korean-text font-bold">ㄲ・ㄸ・ㅃ・ㅆ・ㅉ</span> が濃音です。
+              子音には、同じ形を重ねた濃音もあります。<span class="korean-text font-bold">ㄲ・ㄸ・ㅃ・ㅆ・ㅉ</span> が濃音です。<br>
+              <strong>Shift-Key</strong>を押しながら入力することで、濃音を打つことができます。
             </p>
             <div class="flex flex-wrap gap-2">
               <span class="korean-text px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">ㄲ</span>
@@ -527,8 +492,7 @@
           <div class="bg-indigo-50 dark:bg-indigo-950/30 rounded-2xl p-5 border border-indigo-200/70 dark:border-indigo-800/60 space-y-2">
             <h3 class="font-bold text-base text-indigo-800 dark:text-indigo-200">④ このサイトでのタイピング</h3>
             <p class="text-sm text-indigo-700 dark:text-indigo-300 leading-relaxed">
-              このサイトは、韓国語キーボードの設定をしなくても練習できるように、英字キーからハングルを入力できます。
-              <strong>QWERTYキーとハングルの対応を丸暗記する必要はありません。</strong>
+              韓国語キーボードの設定をしなくても、画面のキーボードガイドを見ながらハングルを入力できます。
             </p>
             <p class="text-sm text-indigo-700 dark:text-indigo-300 leading-relaxed">
               問題中は、下の<strong>キーボードガイド</strong>が次に押すキーを示します。まずはハングルの組み立て方を理解し、実際に打つときは画面のガイドを見ながら練習できます。
@@ -538,76 +502,23 @@
           <div id="guide-keyboard-guide" class="bg-white dark:bg-slate-800 rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-md space-y-3">
             <div class="flex items-center justify-between px-1">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <i class="fa-solid fa-keyboard"></i> 実際に使うキーボードガイド
+                <i class="fa-solid fa-keyboard"></i> キーガイドの例：「ㄱ」を入力する位置
               </span>
             </div>
-          <div class="key-breakdown-guide rounded-xl bg-slate-50 dark:bg-slate-900/50 px-3 py-2 text-center text-xs sm:text-sm" aria-live="polite">
-            <span data-guide-syllable class="font-bold text-slate-800 dark:text-white">-</span>
-            <span class="mx-1 text-slate-400">→</span>
-            <span data-guide-components class="text-slate-600 dark:text-slate-300">-</span>
-          </div>
-                      <!-- Virtual Keyboard Layout Container -->
-          <div class="flex flex-col gap-1.5 max-w-2xl mx-auto select-none" id="guide-virtual-keyboard">
-            <!-- Row 1: Numbers -->
-            <div class="flex justify-center gap-1 text-xs">
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="1">1</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="2">2</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="3">3</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="4">4</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="5">5</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="6">6</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="7">7</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="8">8</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="9">9</div>
-              <div class="key-cap w-8 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center font-mono font-medium" data-key="0">0</div>
+          <div class="rounded-xl bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-center grid sm:grid-cols-2 gap-3">
+            <div>
+              <p class="text-xs font-bold text-slate-500 dark:text-slate-400">例題</p>
+              <p id="guide-example-jamo" class="korean-text mt-1 text-2xl font-bold text-slate-800 dark:text-white">ㄱ</p>
             </div>
-
-            <!-- Row 2: QWERTY Row -->
-            <div class="flex justify-center gap-1 text-xs">
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="q"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">Q</span><span class="font-bold text-sm korean-text">ㅂ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="w"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">W</span><span class="font-bold text-sm korean-text">ㅈ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="e"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">E</span><span class="font-bold text-sm korean-text">ㄷ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="r"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">R</span><span class="font-bold text-sm korean-text">ㄱ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="t"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">T</span><span class="font-bold text-sm korean-text">ㅅ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="y"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">Y</span><span class="font-bold text-sm korean-text">ㅛ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="u"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">U</span><span class="font-bold text-sm korean-text">ㅕ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="i"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">I</span><span class="font-bold text-sm korean-text">ㅑ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="o"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">O</span><span class="font-bold text-sm korean-text">ㅐ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="p"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">P</span><span class="font-bold text-sm korean-text">ㅔ</span></div>
-            </div>
-
-            <!-- Row 3: ASDF Row -->
-            <div class="flex justify-center gap-1 text-xs">
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="a"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">A</span><span class="font-bold text-sm korean-text">ㅁ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="s"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">S</span><span class="font-bold text-sm korean-text">ㄴ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="d"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">D</span><span class="font-bold text-sm korean-text">ㅇ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="f"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">F</span><span class="font-bold text-sm korean-text">ㄹ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="g"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">G</span><span class="font-bold text-sm korean-text">ㅎ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="h"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">H</span><span class="font-bold text-sm korean-text">ㅗ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="j"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">J</span><span class="font-bold text-sm korean-text">ㅓ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="k"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">K</span><span class="font-bold text-sm korean-text">ㅏ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="l"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">L</span><span class="font-bold text-sm korean-text">ㅣ</span></div>
-            </div>
-
-            <!-- Row 4: ZXCV Row -->
-            <div class="flex justify-center gap-1 text-xs">
-              <div class="key-cap w-12 h-10 bg-slate-200 dark:bg-slate-700/90 rounded-lg flex items-center justify-center font-xs text-slate-500 font-mono" data-key="shift">Shift</div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="z"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">Z</span><span class="font-bold text-sm korean-text">ㅋ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="x"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">X</span><span class="font-bold text-sm korean-text">ㅌ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="c"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">C</span><span class="font-bold text-sm korean-text">ㅊ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="v"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">V</span><span class="font-bold text-sm korean-text">ㅍ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="b"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">B</span><span class="font-bold text-sm korean-text">ㅠ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="n"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">N</span><span class="font-bold text-sm korean-text">ㅜ</span></div>
-              <div class="key-cap w-9 h-10 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center relative p-0.5" data-key="m"><span class="text-[9px] text-slate-400 absolute top-0.5 left-1 font-mono">M</span><span class="font-bold text-sm korean-text">ㅡ</span></div>
-              <div class="key-cap w-12 h-10 bg-slate-200 dark:bg-slate-700/90 rounded-lg flex items-center justify-center font-xs text-slate-500 font-mono" data-key="backspace">BS</div>
-            </div>
-
-            <!-- Row 5: Spacebar -->
-            <div class="flex justify-center gap-1 text-xs mt-0.5">
-              <div class="key-cap w-48 sm:w-64 h-9 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex items-center justify-center text-slate-400 font-sans text-xs" data-key=" ">Space</div>
+            <div>
+              <p class="text-xs font-bold text-slate-500 dark:text-slate-400">次に使う指</p>
+              <p class="mt-1 text-lg font-bold text-slate-800 dark:text-white"><span id="guide-next-finger">左人差し指</span></p>
             </div>
           </div>
-          <div class="finger-guide mt-3 border-t border-slate-100 dark:border-slate-700 pt-3"></div>
+          <div class="guide-keyboard-viewport">
+            <div id="guide-virtual-keyboard" class="typing-virtual-keyboard select-none"></div>
+            <div id="guide-finger-guide" class="finger-guide"></div>
+          </div>
 
           </div>
 
@@ -766,17 +677,41 @@
     class SoundEngine {
       constructor() {
         this.ctx = null;
-        this.muted = false;
+        this.master = null;
+        this.volume = 3;      // 0〜4（最大4倍）
+        this.enabled = { key: true, success: true, error: true };
+        try {
+          const saved = JSON.parse(localStorage.getItem('typing-sound-settings') || 'null');
+          if (saved) {
+            if (typeof saved.volume === 'number') this.volume = Math.min(4, Math.max(0, saved.volume));
+            if (saved.enabled) this.enabled = { ...this.enabled, ...saved.enabled };
+          }
+        } catch (e) {}
+      }
+      save() {
+        try { localStorage.setItem('typing-sound-settings', JSON.stringify({ volume: this.volume, enabled: this.enabled })); } catch (e) {}
       }
       init() {
         if (!this.ctx) {
           this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          this.master = this.ctx.createGain();
+          this.master.gain.value = this.volume;
+          this.master.connect(this.ctx.destination);
         }
       }
-      playKey() {
-        if (this.muted) return;
+      setVolume(v) {
+        this.volume = Math.min(4, Math.max(0, Number(v) || 0));
+        if (this.master) this.master.gain.value = this.volume;
+        this.save();
+      }
+      prepare(kind) {
+        if (this.volume <= 0 || !this.enabled[kind]) return false;
         this.init();
         if (this.ctx.state === 'suspended') this.ctx.resume();
+        return true;
+      }
+      playKey() {
+        if (!this.prepare('key')) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sine';
@@ -785,55 +720,85 @@
         gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.03);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.master);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.03);
       }
       playSuccess() {
-        if (this.muted) return;
-        this.init();
-        if (this.ctx.state === 'suspended') this.ctx.resume();
+        if (!this.prepare('success')) return;
         const now = this.ctx.currentTime;
-        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+        [523, 659, 784].forEach((freq, i) => {
+          const t = now + i * 0.09;
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, now + i * 0.06);
-          gain.gain.setValueAtTime(0.08, now + i * 0.06);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.18);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, t);
+          gain.gain.setValueAtTime(0.1, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
           osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now + i * 0.06);
-          osc.stop(now + i * 0.06 + 0.18);
+          gain.connect(this.master);
+          osc.start(t);
+          osc.stop(t + 0.15);
         });
       }
       playError() {
-        if (this.muted) return;
-        this.init();
-        if (this.ctx.state === 'suspended') this.ctx.resume();
+        if (!this.prepare('error')) return;
+        const now = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(180, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(190, now);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.08);
+        gain.connect(this.master);
+        osc.start(now);
+        osc.stop(now + 0.12);
       }
     }
     const sound = new SoundEngine();
 
-    function toggleAudio() {
-      sound.muted = !sound.muted;
+    function updateAudioIcon() {
       const icon = document.getElementById('audio-icon');
-      if (sound.muted) {
-        icon.className = 'fa-solid fa-volume-xmark text-slate-400';
-      } else {
-        icon.className = 'fa-solid fa-volume-high text-base';
-      }
+      if (!icon) return;
+      const allOff = sound.volume <= 0 || !(sound.enabled.key || sound.enabled.success || sound.enabled.error);
+      icon.className = allOff ? 'fa-solid fa-volume-xmark text-slate-400' : 'fa-solid fa-volume-high text-base';
+    }
+    function setAudioVolume(v) {
+      sound.setVolume(v);
+      document.getElementById('audio-volume-label').textContent = Math.round(sound.volume / 4 * 100) + '%';
+      updateAudioIcon();
+    }
+    function setAudioToggle(kind, on) {
+      sound.enabled[kind] = !!on;
+      sound.save();
+      updateAudioIcon();
+      if (on) { if (kind === 'key') sound.playKey(); else if (kind === 'success') sound.playSuccess(); else sound.playError(); }
+    }
+    function toggleAudioPanel(e) {
+      if (e) e.stopPropagation();
+      document.getElementById('audio-panel').classList.toggle('hidden');
+    }
+    document.addEventListener('click', (e) => {
+      const panel = document.getElementById('audio-panel');
+      if (panel && !panel.classList.contains('hidden') && !e.target.closest('#audio-wrap')) panel.classList.add('hidden');
+    });
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('audio-volume').value = sound.volume;
+      document.getElementById('audio-volume-label').textContent = Math.round(sound.volume / 4 * 100) + '%';
+      ['key', 'success', 'error'].forEach(k => { document.getElementById('audio-chk-' + k).checked = !!sound.enabled[k]; });
+      updateAudioIcon();
+    });
+
+    // ミス時：入力文字をシェイク
+    function shakeTypedText() {
+      ['typed-converted-text', 'long-text-typed'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el || el.offsetParent === null) return;
+        el.classList.remove('typo-shake');
+        void el.offsetWidth;
+        el.classList.add('typo-shake');
+      });
     }
 
     // Hangul 2-Set (Dubeolsik) QWERTY to Syllable Composition Engine
@@ -958,7 +923,7 @@
     }
 
     function shiftFingerForKey(key) {
-      return fingerForKey(key)?.startsWith('left-') ? 'right-pinky' : 'left-pinky';
+      return 'left-pinky';
     }
 
     function parseQwertyToHangul(raw) {
@@ -1478,6 +1443,8 @@
       } else if (tab === 'guide') {
         document.getElementById('view-guide').classList.remove('hidden');
       }
+      const guideToggle = document.getElementById('header-guide-toggle');
+      if (guideToggle) guideToggle.style.display = (tab === 'typing') ? 'flex' : 'none';
     }
 
     function setCategoryFilter(cat) {
@@ -1609,6 +1576,7 @@
     let currentSourceSet = null; // ランダム出題の再抽選用に、元の問題集（全問）を保持
 
     function startTypingSession(set) {
+      closeSummaryModal();
       currentSourceSet = set;
       currentSet = { ...set, lines: getSessionLines(set) };
       lineIndex = 0;
@@ -1802,12 +1770,48 @@
       keyboardGuideVisible = !keyboardGuideVisible;
       document.getElementById('keyboard-guide-card').classList.toggle('hidden', !keyboardGuideVisible);
       document.getElementById('keyboard-toggle-label').textContent =
-        keyboardGuideVisible ? 'キーボードガイド 非表示' : 'キーボードガイド 表示';
+        keyboardGuideVisible ? 'キーボードガイド 表示' : 'キーボードガイド 非表示';
       focusTypingInput();
     }
 
+    // 打つべきキー以外を押したとき、キーボードガイドの該当キーをグレーで塗りつぶす
+    const CODE_TO_GUIDE_KEY = {
+      Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Backslash: '\\',
+      Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', Space: ' ',
+      Enter: 'enter', NumpadEnter: 'enter', Backspace: 'backspace', ShiftLeft: 'shift-left', ShiftRight: 'shift-right'
+    };
+    function guideKeyFromEvent(e) {
+      if (CODE_TO_GUIDE_KEY[e.code]) return CODE_TO_GUIDE_KEY[e.code];
+      if (/^Key[A-Z]$/.test(e.code)) return e.code.slice(3).toLowerCase();
+      if (/^Digit[0-9]$/.test(e.code)) return e.code.slice(5);
+      return null;
+    }
+    function expectedGuideKeys() {
+      if (awaitingAdvance) return new Set(['enter', ' ']);
+      if (!currentSet || lineIndex >= currentSet.lines.length) return null;
+      const steps = getTargetKeySteps(currentSet.lines[lineIndex].korean);
+      const step = steps[Math.min(rawInput.length, steps.length - 1)];
+      if (!step) return null;
+      const set = new Set([step.key]);
+      if (step.shift) set.add('shift-left').add('shift-right');
+      return set;
+    }
+    function flagWrongKey(e) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const pressed = guideKeyFromEvent(e);
+      const expected = expectedGuideKeys();
+      if (!pressed || !expected || expected.has(pressed)) return;
+      document.querySelectorAll('#virtual-keyboard .key-cap').forEach(cap => {
+        if (cap.dataset.key === pressed) {
+          cap.classList.add('is-wrong-key');
+          clearTimeout(cap._wrongTimer);
+          cap._wrongTimer = setTimeout(() => cap.classList.remove('is-wrong-key'), 350);
+        }
+      });
+    }
+
     function updateVirtualKeyboardHighlight(targetText) {
-      document.querySelectorAll('.key-cap').forEach(key => {
+      document.querySelectorAll('#virtual-keyboard .key-cap').forEach(key => {
         key.classList.remove('is-current-key', 'ring-2', 'ring-purple-500', 'shadow-sm');
       });
       highlightFingers([]);
@@ -1817,7 +1821,6 @@
         highlightKey('enter');
         highlightKey(' ');
         highlightFingers(['right-pinky', 'right-thumb']);
-        updateKeyBreakdown('入力完了', 'Enter / Space');
         return;
       }
 
@@ -1825,7 +1828,6 @@
       const step = steps[Math.min(rawInput.length, steps.length - 1)];
       if (!step) {
         document.getElementById('next-key-char').textContent = '-';
-        updateKeyBreakdown('対応キーなし', '-');
         return;
       }
 
@@ -1842,22 +1844,14 @@
       }
       highlightFingers(activeFingers);
 
-      updateKeyBreakdown(step.targetChar, step.components.join(' + '));
     }
 
-    function updateKeyBreakdown(syllable, components) {
-      document.querySelectorAll('.key-breakdown-guide').forEach(guide => {
-        guide.querySelector('[data-guide-syllable]').textContent = syllable || '行送り';
-        guide.querySelector('[data-guide-components]').textContent = components;
-      });
-    }
-
-    function highlightKey(keyName) {
+    function highlightKey(keyName, keyboard = document.getElementById('virtual-keyboard')) {
+      if (!keyboard) return;
       const targetKey = keyName === ' ' ? ' ' : keyName.toLowerCase();
-      document.querySelectorAll('.key-cap').forEach(key => {
+      keyboard.querySelectorAll('.key-cap').forEach(key => {
         if (key.dataset.key === targetKey) {
           key.classList.add('is-current-key', 'ring-2', 'ring-purple-500', 'shadow-sm');
-          const keyboard = key.closest('#virtual-keyboard, #guide-virtual-keyboard');
           if (keyboard && keyboard.scrollWidth > keyboard.clientWidth) {
             const keyRect = key.getBoundingClientRect();
             const keyboardRect = keyboard.getBoundingClientRect();
@@ -1868,82 +1862,99 @@
       });
     }
 
-    function highlightFingers(fingerNames) {
+    function highlightFingers(fingerNames, guide = document.getElementById('keyboard-guide-card')) {
+      if (!guide) return;
       const active = new Set(fingerNames.filter(Boolean));
-      document.querySelectorAll('.finger-cap').forEach(finger => {
+      guide.querySelectorAll('.finger-cap').forEach(finger => {
         const isActive = active.has(finger.dataset.finger);
-        finger.setAttribute('fill', isActive ? '#7c3aed' : (finger.dataset.tint || '#ffffff'));
-        finger.setAttribute('stroke', isActive ? '#6d28d9' : '#94a3b8');
+        if (finger.dataset.tint) {
+          finger.setAttribute('fill', isActive ? '#8266e0' : finger.dataset.tint);
+          finger.setAttribute('stroke', 'none');
+        } else {
+          finger.setAttribute('fill', isActive ? '#7c3aed' : '#ffffff');
+          finger.setAttribute('stroke', isActive ? '#6d28d9' : '#94a3b8');
+        }
       });
-      const fingerLabel = document.getElementById('next-finger-label');
+      const fingerLabel = guide.id === 'keyboard-guide-card' && document.getElementById('next-finger-label');
       if (fingerLabel) {
         const names = [...active].map(f => FINGER_LABELS[f]).filter(Boolean);
         fingerLabel.textContent = names.length ? '／ ' + names.join(' + ') : '';
       }
     }
 
-    function makeExtraKey(key, label, shiftedLabel = '') {
-      const cap = document.createElement('div');
-      cap.className = `key-cap ${key === 'enter' ? 'min-w-12' : 'min-w-9'} h-10 px-1 bg-slate-100 dark:bg-slate-700/70 rounded-lg flex flex-col items-center justify-center font-mono text-[10px] relative shrink-0`;
-      cap.dataset.key = key;
-      if (shiftedLabel) {
-        const shifted = document.createElement('span');
-        shifted.className = 'absolute top-0 left-1 text-[8px] text-slate-400';
-        shifted.textContent = shiftedLabel;
-        cap.appendChild(shifted);
-      }
-      const keyText = document.createElement('span');
-      keyText.className = 'font-bold';
-      keyText.textContent = label;
-      cap.appendChild(keyText);
-      return cap;
-    }
-
     function setupKeyboardGuides() {
-      document.querySelectorAll('#virtual-keyboard, #guide-virtual-keyboard').forEach(keyboard => {
-        const rows = Array.from(keyboard.children);
-        keyboard.classList.add('w-full', 'overflow-x-auto', 'overflow-y-hidden');
-        rows.forEach(row => row.classList.add('w-max', 'min-w-full', 'shrink-0'));
-        const numbers = rows[0];
-        const numberShift = { '1':'!', '2':'@', '3':'#', '4':'$', '5':'%', '6':'^', '7':'&', '8':'*', '9':'(', '0':')' };
-        Object.entries(numberShift).forEach(([key, shifted]) => {
-          const cap = Array.from(numbers.children).find(item => item.dataset.key === key);
-          if (cap) {
-            cap.classList.add('flex-col', 'relative');
-            cap.innerHTML = `<span class="absolute top-0.5 left-1 text-[8px] text-slate-400">${shifted}</span><span>${key}</span>`;
-          }
-        });
-        numbers.insertBefore(makeExtraKey('`', '`', '~'), numbers.firstElementChild);
-        numbers.append(makeExtraKey('-', '-', '_'), makeExtraKey('=', '=', '+'));
-
-        rows[1].append(makeExtraKey('[', '[', '{'), makeExtraKey(']', ']', '}'), makeExtraKey('\\', '\\', '|'));
-        rows[2].append(makeExtraKey(';', ';', ':'), makeExtraKey("'", "'", '"'), makeExtraKey('enter', 'Enter'));
-
-        const bottom = rows[3];
-        const leftShift = bottom.querySelector('[data-key="shift"]');
-        if (leftShift) leftShift.dataset.key = 'shift-left';
-        const backspace = bottom.querySelector('[data-key="backspace"]');
-        backspace.before(makeExtraKey(',', ',', '<'), makeExtraKey('.', '.', '>'), makeExtraKey('/', '/', '?'));
-        bottom.append(makeExtraKey('shift-right', 'Shift'));
-        keyboard.querySelectorAll('.key-cap').forEach(key => key.classList.add('shrink-0'));
-      });
+      const typingKeyboard = document.getElementById('virtual-keyboard');
+      if (typingKeyboard) buildTypingKeyboard(typingKeyboard);
+      const guideKeyboard = document.getElementById('guide-virtual-keyboard');
+      const example = 'ㄱ';
+      const [exampleStep] = getTargetKeySteps(example);
+      if (guideKeyboard && exampleStep) {
+        document.getElementById('guide-example-jamo').textContent = example;
+        document.getElementById('guide-next-finger').textContent = FINGER_LABELS[fingerForKey(exampleStep.key)] || '';
+        buildTypingKeyboard(guideKeyboard, { highlightKey: exampleStep.key });
+      }
 
       const handArt = getFingerGuideMarkup();
       document.querySelectorAll('.finger-guide').forEach(guide => {
-        guide.innerHTML = guide.closest('#keyboard-guide-card') ? getFingerStripMarkup() : handArt;
+        guide.innerHTML = guide.closest('#keyboard-guide-card, #guide-keyboard-guide') ? getFingerStripMarkup() : handArt;
       });
-
+      if (guideKeyboard && exampleStep) {
+        highlightFingers([fingerForKey(exampleStep.key)], document.getElementById('guide-keyboard-guide'));
+      }
     }
 
+    // 打鍵画面のキーボード（2벌식の標準配列。ラベルはハングルのみ）
+    function buildTypingKeyboard(kb, options = {}) {
+      if (!kb) return;
+      const J = { q:['ㅃ','ㅂ'], w:['ㅉ','ㅈ'], e:['ㄸ','ㄷ'], r:['ㄲ','ㄱ'], t:['ㅆ','ㅅ'], y:[null,'ㅛ'], u:[null,'ㅕ'], i:[null,'ㅑ'], o:['ㅒ','ㅐ'], p:['ㅖ','ㅔ'],
+                  a:[null,'ㅁ'], s:[null,'ㄴ'], d:[null,'ㅇ'], f:[null,'ㄹ'], g:[null,'ㅎ'], h:[null,'ㅗ'], j:[null,'ㅓ'], k:[null,'ㅏ'], l:[null,'ㅣ'],
+                  z:[null,'ㅋ'], x:[null,'ㅌ'], c:[null,'ㅊ'], v:[null,'ㅍ'], b:[null,'ㅠ'], n:[null,'ㅜ'], m:[null,'ㅡ'] };
+      const sym = (k, top, base, u = 1) => ({ k, u, top, base, cls: 'vk-sym' });
+      const jam = k => ({ k, u: 1, top: J[k][0], base: J[k][1], cls: 'vk-jamo' });
+      const lab = (k, label, u, pos) => ({ k, u, label, pos });
+      const nums = '1234567890'.split('');
+      const numShift = { '1':'!', '2':'@', '3':'#', '4':'$', '5':'%', '6':'^', '7':'&', '8':'*', '9':'(', '0':')' };
+      const rows = [
+        [sym('`','~','`'), ...nums.map(n => sym(n, numShift[n], n)), sym('-','_','-'), sym('=','+','='), lab('backspace','Backspace',2,'r')],
+        [lab(null,'Tab',2,'l'), ...'qwertyuiop'.split('').map(jam), sym('[','{','['), sym(']','}',']'), sym('\\','|','\\')],
+        [lab(null,'Caps Lock',2,'l'), ...'asdfghjkl'.split('').map(jam), sym(';',':',';'), sym("'",'"',"'"), lab('enter','Enter',2,'r')],
+        [lab('shift-left','Shift',2.5,'l'), ...'zxcvbnm'.split('').map(jam), sym(',','<',','), sym('.','>','.'), sym('/','?','/'), lab('shift-right','Shift',2.5,'r')],
+        [lab(null,'Ctrl',1.15,'l'), lab(null,'Alt',1.15,'l'), lab(' ','',10.4,'l'), lab(null,'Alt',1.15,'r'), lab(null,'Ctrl',1.15,'r')]
+      ];
+      kb.innerHTML = '';
+      rows.forEach(r => {
+        const row = document.createElement('div');
+        row.className = 'vk-row';
+        r.forEach(spec => {
+          const cap = document.createElement('div');
+          cap.className = 'key-cap vk-key';
+          cap.style.setProperty('--u', spec.u);
+          if (spec.k !== null) cap.dataset.key = spec.k;
+          if (spec.label !== undefined) {
+            if (spec.label) cap.innerHTML = `<span class="vk-label ${spec.pos}">${spec.label}</span>`;
+          } else if (spec.top) {
+            cap.innerHTML = `<span class="${spec.cls}">${spec.top}</span><span class="${spec.cls}">${spec.base}</span>`;
+          } else {
+            cap.classList.add('vk-single');
+            cap.innerHTML = `<span class="${spec.cls}">${spec.base}</span>`;
+          }
+          row.appendChild(cap);
+        });
+        kb.appendChild(row);
+      });
+      if (options.highlightKey) highlightKey(options.highlightKey, kb);
+    }
+
+    // 指ライン：理想画像どおり、キーボード直下に灰色のバー（下端でクリップ）
     function getFingerStripMarkup() {
-      const hs = { pinky:22, ring:28, middle:32, index:28, thumb:18 };
-      const left = [['pinky',40],['ring',100],['middle',160],['index',220],['thumb',280]];
-      const right = [['thumb',368],['index',428],['middle',488],['ring',548],['pinky',608]];
-      const pill = (side, [f, x]) => {
-        const h = hs[f];
-        return `<rect class="finger-cap" data-finger="${side}-${f}" x="${x}" y="${34 - h}" width="52" height="${h}" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>`;
+      const W = 68, tops = { pinky: 34, ring: 2, middle: 2, index: 2, thumb: 67 };
+      const L = { pinky: 2, ring: 78, middle: 154, index: 230, thumb: 305 };
+      const bar = (side, f) => {
+        const x = side === 'left' ? L[f] : 1050 - L[f] - W;
+        return `<rect class="finger-cap" data-finger="${side}-${f}" data-tint="#d9d9d9" x="${x}" y="${tops[f]}" width="${W}" height="${92 - tops[f] + 40}" rx="34" fill="#d9d9d9"/>`;
       };
-      return `<div class="finger-strip"><svg viewBox="0 0 700 36" role="img" aria-label="左右の指">${left.map(p => pill('left', p)).join('')}${right.map(p => pill('right', p)).join('')}</svg></div>`;
+      const fs = ['pinky','ring','middle','index','thumb'];
+      return `<div class="finger-strip"><svg viewBox="0 0 1050 92" role="img" aria-label="左右の指">${fs.map(f => bar('left', f)).join('')}${fs.map(f => bar('right', f)).join('')}</svg></div>`;
     }
 
     function getFingerGuideMarkup() {
@@ -2080,6 +2091,7 @@
           if (newErrors > 0) {
             errorCount += newErrors;
             sound.playError();
+            shakeTypedText();
           }
           renderLine();
         }
@@ -2095,6 +2107,7 @@
         const finished = lineIndex >= currentSet.lines.length;
 
         if (awaitingAdvance) {
+          flagWrongKey(e);
           if ((e.key === ' ' || e.key === 'Enter') && !e.isComposing && e.keyCode !== 229) {
             e.preventDefault();
             awaitingAdvance = false;
@@ -2105,6 +2118,8 @@
           }
           return;
         }
+
+        flagWrongKey(e);
 
         if (e.key === 'Enter') { e.preventDefault(); return; }
         if (e.key === ' ' && (finished || input.value.length === 0)) {
