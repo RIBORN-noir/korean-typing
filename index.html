@@ -176,11 +176,19 @@
   box-shadow: 0 1px 2px rgba(15,23,42,.12), 0 2px 5px rgba(15,23,42,.06);
 }
 .typing-virtual-keyboard .vk-key.vk-single { justify-content: center; }
-.typing-virtual-keyboard .vk-sym  { font-size: clamp(9px, calc(var(--kh) * .2), 14px); }
-.typing-virtual-keyboard .vk-jamo { font-size: clamp(8px, calc(var(--kh) * .16), 11.5px); }
+.typing-virtual-keyboard .vk-sym  {
+  font-size: clamp(calc(9px * var(--legend-scale, 1)), calc(var(--kh) * .2 * var(--legend-scale, 1)), calc(14px * var(--legend-scale, 1)));
+  font-weight: 600;
+}
+.typing-virtual-keyboard .vk-jamo {
+  font-size: clamp(calc(8px * var(--legend-scale, 1)), calc(var(--kh) * .16 * var(--legend-scale, 1)), calc(11.5px * var(--legend-scale, 1)));
+  font-weight: 600;
+}
 .typing-virtual-keyboard .vk-label {
   position: absolute; bottom: clamp(3px, calc(var(--kh) * .1), 8px);
-  font-size: clamp(7.5px, calc(var(--kh) * .16), 11.5px); font-family: 'Noto Sans JP', sans-serif;
+  font-size: clamp(calc(7.5px * var(--legend-scale, 1)), calc(var(--kh) * .16 * var(--legend-scale, 1)), calc(11.5px * var(--legend-scale, 1)));
+  font-family: 'Noto Sans JP', sans-serif; font-weight: 600;
+  max-width: calc(100% - 8px); overflow: hidden; white-space: nowrap;
 }
 .typing-virtual-keyboard .vk-label.l { left: clamp(4px, calc(var(--kh) * .11), 8px); }
 .typing-virtual-keyboard .vk-label.r { right: clamp(4px, calc(var(--kh) * .11), 8px); }
@@ -252,6 +260,23 @@
               <label class="flex items-center justify-between cursor-pointer"><span>ミス音</span><input type="checkbox" id="audio-chk-error" checked onchange="setAudioToggle('error', this.checked)" class="w-4 h-4 accent-purple-600"></label>
             </div>
           </div>
+          </div>
+
+          <div class="relative" id="keyboard-display-wrap" style="display:none">
+            <button type="button" id="keyboard-display-toggle" onclick="toggleKeyboardDisplayPanel(event)" title="キーの文字サイズ設定" aria-label="キーの文字サイズ設定" aria-expanded="false" class="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-purple-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+              <i class="fa-solid fa-text-height text-base"></i>
+            </button>
+            <div id="keyboard-display-panel" class="hidden absolute right-0 top-full mt-2 w-64 z-50 p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl text-sm text-slate-700 dark:text-slate-200">
+              <label for="keyboard-legend-scale" class="flex items-center justify-between mb-2 font-bold">
+                <span>キーの文字サイズ</span>
+                <span class="text-xs font-normal text-slate-500 dark:text-slate-400">50〜200%</span>
+              </label>
+              <div class="flex items-center gap-2">
+                <input type="number" id="keyboard-legend-scale" min="50" max="200" step="1" value="100" inputmode="numeric" aria-describedby="keyboard-legend-scale-help" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-purple-500">
+                <span class="font-semibold">%</span>
+              </div>
+              <p id="keyboard-legend-scale-help" class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">数値を入力できます。キーの形と配置は変わりません。</p>
+            </div>
           </div>
 
           <!-- キーボードガイド 表示/非表示（タイピング画面のときだけ表示） -->
@@ -1443,8 +1468,67 @@
       } else if (tab === 'guide') {
         document.getElementById('view-guide').classList.remove('hidden');
       }
+      const displaySettings = document.getElementById('keyboard-display-wrap');
+      if (displaySettings) displaySettings.style.display = (tab === 'typing' || tab === 'guide') ? 'block' : 'none';
       const guideToggle = document.getElementById('header-guide-toggle');
       if (guideToggle) guideToggle.style.display = (tab === 'typing') ? 'flex' : 'none';
+    }
+
+    const KEYBOARD_DISPLAY_STORAGE_KEY = 'typing-keyboard-display-settings';
+    let keyboardLegendScale = 100;
+
+    function applyKeyboardLegendScale(value) {
+      const scale = Math.min(200, Math.max(50, value)) / 100;
+      document.querySelectorAll('.typing-virtual-keyboard').forEach(keyboard => {
+        keyboard.style.setProperty('--legend-scale', scale);
+      });
+    }
+
+    function setKeyboardLegendScale(value, commit = false) {
+      const input = document.getElementById('keyboard-legend-scale');
+      const parsed = Number(value);
+      if (String(value).trim() === '' || !Number.isFinite(parsed)) {
+        if (commit && input) input.value = String(keyboardLegendScale);
+        return;
+      }
+      keyboardLegendScale = Math.min(200, Math.max(50, parsed));
+      applyKeyboardLegendScale(keyboardLegendScale);
+      if (commit) {
+        if (input) input.value = String(keyboardLegendScale);
+        try {
+          localStorage.setItem(KEYBOARD_DISPLAY_STORAGE_KEY, JSON.stringify({ legendScale: keyboardLegendScale }));
+        } catch (err) {
+          console.warn('キーボード表示設定の保存に失敗しました:', err);
+        }
+      }
+    }
+
+    function toggleKeyboardDisplayPanel(event) {
+      event.stopPropagation();
+      const panel = document.getElementById('keyboard-display-panel');
+      const button = document.getElementById('keyboard-display-toggle');
+      const opening = panel.classList.contains('hidden');
+      panel.classList.toggle('hidden', !opening);
+      button.setAttribute('aria-expanded', String(opening));
+      if (opening) document.getElementById('keyboard-legend-scale').focus();
+    }
+
+    function loadKeyboardDisplaySettings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(KEYBOARD_DISPLAY_STORAGE_KEY) || 'null');
+        if (saved && typeof saved.legendScale === 'number' && Number.isFinite(saved.legendScale)) {
+          keyboardLegendScale = Math.min(200, Math.max(50, saved.legendScale));
+        }
+      } catch (err) {
+        console.warn('キーボード表示設定の読み込みに失敗しました:', err);
+      }
+      const input = document.getElementById('keyboard-legend-scale');
+      if (input) {
+        input.value = String(keyboardLegendScale);
+        input.addEventListener('input', () => setKeyboardLegendScale(input.value));
+        input.addEventListener('change', () => setKeyboardLegendScale(input.value, true));
+      }
+      applyKeyboardLegendScale(keyboardLegendScale);
     }
 
     function setCategoryFilter(cat) {
@@ -2015,8 +2099,9 @@
       if (!currentSet) return;
       const screen = document.getElementById('typing-start-screen');
       const startVisible = screen && !screen.classList.contains('hidden');
+      const targetIsControl = e.target.closest?.('button, a, input:not(#typing-input), textarea, select, [role="button"]');
 
-      if (startVisible && (e.key === ' ' || e.key === 'Enter')) {
+      if (startVisible && (e.key === ' ' || e.key === 'Enter') && !targetIsControl) {
         e.preventDefault();
         startTypingFromStartScreen();
         return;
@@ -2024,7 +2109,6 @@
 
       const typingView = document.getElementById('view-typing');
       const summary = document.getElementById('modal-summary');
-      const targetIsControl = e.target.closest?.('button, a, input:not(#typing-input), textarea, select, [role="button"]');
       if (currentSet.category === '長文' && typingStarted && awaitingAdvance && isAdvanceKey(e) &&
           typingView && !typingView.classList.contains('hidden') &&
           summary && summary.classList.contains('hidden') &&
@@ -2045,10 +2129,20 @@
     // Input listeners setup
     window.addEventListener('DOMContentLoaded', () => {
       setupKeyboardGuides();
+      loadKeyboardDisplaySettings();
       loadProblemSets();
 
       const input = document.getElementById('typing-input');
       const typingView = document.getElementById('view-typing');
+      document.addEventListener('click', (e) => {
+        const wrap = document.getElementById('keyboard-display-wrap');
+        if (wrap && !wrap.contains(e.target)) {
+          const panel = document.getElementById('keyboard-display-panel');
+          const button = document.getElementById('keyboard-display-toggle');
+          panel.classList.add('hidden');
+          button.setAttribute('aria-expanded', 'false');
+        }
+      });
       typingView.addEventListener('click', (e) => {
         if (!typingStarted || e.target.closest('button, a, input, textarea, select, label, [role="button"], #typing-start-screen, #modal-summary')) return;
         focusTypingInput();
